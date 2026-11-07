@@ -1,0 +1,2988 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>PROTO-OS v5.0 // Nova-7 Visor Reactivo & IA</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            cyber: {
+              bg: '#07090e',
+              panel: '#0d121d',
+              border: '#1e293b',
+              cyan: '#00f0ff',
+              purple: '#a855f7',
+              emerald: '#10b981',
+              amber: '#f59e0b',
+              pink: '#ec4899'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+            mono: ['JetBrains Mono', 'Fira Code', 'monospace']
+          }
+        }
+      }
+    };
+  </script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100dvh;
+      overflow: hidden;
+      background-color: #07090e;
+      color: #e2e8f0;
+    }
+
+    .chat-scroll::-webkit-scrollbar {
+      width: 5px;
+    }
+    .chat-scroll::-webkit-scrollbar-track {
+      background: rgba(13, 18, 29, 0.4);
+    }
+    .chat-scroll::-webkit-scrollbar-thumb {
+      background: rgba(0, 240, 255, 0.25);
+      border-radius: 9999px;
+    }
+
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
+    /* Escenario 3D del Visor */
+    .visor-stage {
+      perspective: 850px;
+    }
+
+    .visor-frame {
+      --visor-glow: rgba(0, 240, 255, 0.32);
+      --visor-border: rgba(0, 240, 255, 0.65);
+      --touch-x: 50%;
+      --touch-y: 50%;
+      --touch-opacity: 0;
+      box-shadow: 0 0 30px -4px var(--visor-glow), inset 0 0 26px -6px var(--visor-glow);
+      border-color: var(--visor-border);
+      transition: box-shadow 0.3s ease, border-color 0.3s ease;
+      transform-style: preserve-3d;
+      touch-action: none;
+      will-change: transform;
+    }
+
+    /* Halo de luz que sigue al cursor / dedo con precisión */
+    .visor-touch-spotlight {
+      background: radial-gradient(
+        150px circle at var(--touch-x) var(--touch-y),
+        var(--visor-glow),
+        transparent 72%
+      );
+      opacity: var(--touch-opacity);
+      transition: opacity 0.18s ease;
+      pointer-events: none;
+    }
+
+    /* Punto láser / retícula suave que sigue al cursor dentro del visor */
+    .visor-cursor-reticle {
+      position: absolute;
+      left: var(--touch-x);
+      top: var(--touch-y);
+      width: 22px;
+      height: 22px;
+      transform: translate(-50%, -50%);
+      border: 1.5px dashed var(--visor-border);
+      border-radius: 9999px;
+      opacity: var(--touch-opacity);
+      pointer-events: none;
+      z-index: 25;
+      transition: opacity 0.15s ease;
+    }
+
+    .visor-scanlines {
+      background: linear-gradient(
+        to bottom,
+        rgba(255, 255, 255, 0),
+        rgba(255, 255, 255, 0) 50%,
+        rgba(0, 240, 255, 0.04) 50%,
+        rgba(0, 240, 255, 0.04)
+      );
+      background-size: 100% 4px;
+      pointer-events: none;
+    }
+
+    @keyframes visorTalking {
+      0%, 100% {
+        filter: drop-shadow(0 0 8px var(--visor-glow));
+      }
+      50% {
+        filter: drop-shadow(0 0 24px var(--visor-border)) brightness(1.18);
+      }
+    }
+
+    .animate-visor-talking {
+      animation: visorTalking 0.32s ease-in-out infinite;
+    }
+
+    /* Efecto Glitch para la expresión Glitch */
+    @keyframes cyberGlitch {
+      0%, 100% { transform: translate(0, 0); filter: hue-rotate(0deg); }
+      20% { transform: translate(-3px, 1px); filter: hue-rotate(90deg); }
+      40% { transform: translate(3px, -1px); filter: hue-rotate(-90deg); }
+      60% { transform: translate(-2px, -1px); }
+      80% { transform: translate(2px, 2px); filter: hue-rotate(45deg); }
+    }
+
+    .animate-glitch {
+      animation: cyberGlitch 0.28s infinite;
+    }
+
+    /* Onda expansiva doble al tocar el visor (Boop Ripple) */
+    @keyframes boopRipple {
+      0% {
+        transform: translate(-50%, -50%) scale(0.15);
+        opacity: 0.95;
+      }
+      100% {
+        transform: translate(-50%, -50%) scale(2.9);
+        opacity: 0;
+      }
+    }
+
+    .boop-ripple {
+      position: absolute;
+      width: 68px;
+      height: 68px;
+      border-radius: 9999px;
+      border: 2px solid var(--visor-border);
+      box-shadow: 0 0 16px var(--visor-glow);
+      pointer-events: none;
+      z-index: 30;
+      animation: boopRipple 0.62s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    /* Partículas flotantes al acariciar o mover el cursor */
+    @keyframes floatParticle {
+      0% {
+        transform: translate(-50%, -50%) scale(0.6) translateY(0px) rotate(0deg);
+        opacity: 1;
+      }
+      100% {
+        transform: translate(-50%, -50%) scale(1.3) translateY(-46px) rotate(18deg);
+        opacity: 0;
+      }
+    }
+
+    .visor-particle {
+      position: absolute;
+      pointer-events: none;
+      z-index: 35;
+      font-size: 15px;
+      animation: floatParticle 0.85s ease-out forwards;
+    }
+
+    @keyframes messageSlideIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .msg-appear {
+      animation: messageSlideIn 0.22s ease-out forwards;
+    }
+  </style>
+</head>
+
+<body class="flex flex-col h-[100dvh] w-full max-w-2xl mx-auto bg-cyber-bg select-none sm:border-x sm:border-slate-800/80 shadow-2xl relative">
+
+  <!-- ==========================================================================
+       SECCIÓN A: VISOR INTERACTIVO CON FÍSICA DE RESORTES (60FPS) + 16 EXPRESIONES
+       ========================================================================== -->
+  <header class="relative shrink-0 p-2.5 sm:p-3.5 bg-gradient-to-b from-slate-900/95 to-cyber-bg border-b border-slate-800/80 z-10">
+    
+    <!-- Barra de Estado Superior -->
+    <div class="flex items-center justify-between mb-2 px-1 text-xs font-mono gap-1">
+      <div class="flex items-center gap-2 truncate">
+        <span id="status-dot" class="w-2.5 h-2.5 shrink-0 rounded-full bg-cyber-cyan animate-pulse shadow-[0_0_8px_#00f0ff]"></span>
+        <span id="bot-name-header" class="font-bold tracking-wider text-cyber-cyan truncate">NOVA-7 // IA VIVA</span>
+      </div>
+
+      <div class="flex items-center gap-1 shrink-0 flex-wrap justify-end">
+        <span id="emotion-badge" class="hidden sm:inline-block px-2 py-0.5 rounded bg-slate-800/90 border border-cyan-500/30 text-[10px] text-cyan-300">
+          FELIZ ^w^
+        </span>
+
+        <button id="theme-cycle-btn" type="button" title="Cambiar Tema de Color del Visor (Auto / Cian / Synthwave / Carmesí / Dorado / RGB Arcoíris)"
+          class="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 active:scale-95 border border-fuchsia-500/40 text-[11px] text-fuchsia-300 transition flex items-center gap-1">
+          <span id="theme-cycle-label">🎨 Color: Auto</span>
+        </button>
+
+        <button id="dj-mode-btn" type="button" title="Activar/Desactivar Modo DJ Synthwave (el visor baila al ritmo)"
+          class="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 active:scale-95 border border-violet-500/40 text-[11px] text-violet-300 transition flex items-center gap-1">
+          <span id="dj-mode-label">🎵 DJ: Off</span>
+        </button>
+
+        <button id="voice-mode-btn" type="button" title="Cambiar modo de voz (Voz Masculina + Synth / Solo Synth / Silencio)"
+          class="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 active:scale-95 border border-emerald-500/40 text-[11px] text-emerald-300 transition flex items-center gap-1">
+          <span id="voice-mode-label">🔊 Voz + Synth</span>
+        </button>
+
+        <label for="custom-visor-upload" title="Cargar imagen de referencia del Protogen"
+          class="cursor-pointer px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 active:scale-95 border border-slate-600 text-[11px] text-slate-200 transition flex items-center gap-1">
+          <span>📷</span>
+          <input id="custom-visor-upload" type="file" accept="image/*" class="hidden" />
+        </label>
+
+        <button id="open-settings-btn" type="button" title="Configurar Motor IA, Memoria y Personalidad"
+          class="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 active:scale-95 border border-cyan-500/40 text-[11px] text-cyan-300 transition flex items-center gap-1">
+          <span>⚙️ IA / 🧠</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Escenario 3D del Visor -->
+    <div class="visor-stage w-full">
+      <div id="visor-container"
+        class="visor-frame relative w-full h-44 sm:h-52 rounded-2xl bg-cyber-panel border-2 overflow-hidden flex items-center justify-center cursor-pointer"
+        title="Mueve el cursor/dedo para seguimiento 3D, desliza para acariciar, agita rápido para marearlo o haz clic para Boop">
+
+        <!-- Retícula de fondo -->
+        <div class="absolute inset-0 opacity-15 bg-[radial-gradient(#00f0ff_1px,transparent_1px)] [background-size:16px_16px]"></div>
+
+        <!-- Halo y retícula que siguen al cursor/dedo -->
+        <div class="visor-touch-spotlight absolute inset-0 z-10"></div>
+        <div class="visor-cursor-reticle"></div>
+
+        <!-- Barra superior de Nivel de Afecto + Energía Cyber + Memoria -->
+        <div class="absolute top-2 left-3 right-3 flex items-center justify-between text-[10px] font-mono text-cyan-300/80 z-20 pointer-events-none gap-2">
+          <div class="flex items-center gap-2.5 flex-wrap">
+            <div class="flex items-center gap-1">
+              <span>💖 AFECTO:</span>
+              <div class="w-14 sm:w-16 h-1.5 rounded-full bg-slate-800 overflow-hidden border border-pink-500/30">
+                <div id="affection-bar" class="h-full bg-gradient-to-r from-cyan-400 to-pink-400 transition-all duration-300" style="width: 45%"></div>
+              </div>
+            </div>
+            <div class="flex items-center gap-1">
+              <span>⚡ ENERGÍA:</span>
+              <div class="w-14 sm:w-16 h-1.5 rounded-full bg-slate-800 overflow-hidden border border-emerald-500/30">
+                <div id="energy-bar" class="h-full bg-gradient-to-r from-emerald-400 to-cyan-300 transition-all duration-300" style="width: 85%"></div>
+              </div>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 shrink-0">
+            <span id="memory-hud-pill" class="hidden sm:inline px-1.5 py-0.2 rounded bg-slate-900/80 border border-cyan-500/30 text-[9px] text-cyan-200">🧠 MEMORIA ACTIVA</span>
+            <span id="gaze-coords" class="text-[9px] text-slate-400">MIRADA: X:0 Y:0</span>
+          </div>
+        </div>
+
+        <!-- 1. IMAGEN DE REFERENCIA DEL PROTOGEN -->
+        <img
+          id="protogen-visor-img"
+          src=""
+          alt="Visor del Protogen"
+          class="hidden w-full h-full object-contain object-center p-2 z-10 select-none pointer-events-none"
+        />
+
+        <!-- 2. VISOR LED INTERACTIVO CON OREJAS ESPONJOSAS DE PROTOGEN, SÍMBOLOS EN MEJILLA Y FÍSICA ELÁSTICA -->
+        <div id="protogen-svg-fallback" class="w-full h-full flex items-center justify-center p-1.5 z-10 pointer-events-none">
+          <svg viewBox="-38 -48 476 230" class="w-full h-full max-h-48 drop-shadow-[0_0_14px_var(--visor-border)]" fill="none" xmlns="http://www.w3.org/2000/svg">
+            
+            <!-- OREJAS GRANDES Y ESPONJOSAS DE PROTOGEN / FENNEC (Con pelaje interno y mechones) -->
+            <g id="svg-ears-group">
+              <!-- OREJA IZQUIERDA -->
+              <g id="svg-ear-left" class="text-cyber-cyan" style="transform-origin: 68px 42px;">
+                <path d="M 38 68 C 2 48, -28 8, -26 -30 C -25 -42, -14 -44, -2 -36 C 32 -16, 68 6, 94 28 Z"
+                      fill="#0b1324" stroke="currentColor" stroke-width="3.2" stroke-linejoin="round" />
+                <path d="M 44 54 C 16 36, -10 6, -12 -22 C -12 -28, -5 -28, 2 -23 C 26 -6, 52 12, 74 30 Z"
+                      fill="#16213a" stroke="currentColor" stroke-width="1.6" stroke-opacity="0.55" />
+                <path d="M 34 52 Q 16 40 28 32 Q 14 22 32 18 Q 48 22 62 34"
+                      fill="#0f1b33" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
+              </g>
+
+              <!-- OREJA DERECHA -->
+              <g id="svg-ear-right" class="text-cyber-cyan" style="transform-origin: 332px 42px;">
+                <path d="M 362 68 C 398 48, 428 8, 426 -30 C 425 -42, 414 -44, 402 -36 C 368 -16, 332 6, 306 28 Z"
+                      fill="#0b1324" stroke="currentColor" stroke-width="3.2" stroke-linejoin="round" />
+                <path d="M 356 54 C 384 36, 410 6, 412 -22 C 412 -28, 405 -28, 398 -23 C 374 -6, 348 12, 326 30 Z"
+                      fill="#16213a" stroke="currentColor" stroke-width="1.6" stroke-opacity="0.55" />
+                <path d="M 366 52 Q 384 40 372 32 Q 386 22 368 18 Q 352 22 338 34"
+                      fill="#0f1b33" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
+              </g>
+
+              <!-- MECHÓN DE PELAJE SUPERIOR (En la coronilla, entre las dos orejas) -->
+              <path id="svg-head-fluff"
+                    d="M 168 22 Q 178 -2 194 12 Q 202 -12 214 10 Q 228 -2 232 22"
+                    fill="#0b1324" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"
+                    class="text-cyber-cyan opacity-90" />
+            </g>
+
+            <!-- CASCO / VISOR EXTERIOR CON PANELES DE MEJILLA DINÁMICOS -->
+            <g id="svg-helmet-group">
+              <path d="M45 40 C95 12, 305 12, 355 40 C385 65, 390 125, 345 152 C295 174, 105 174, 55 152 C10 125, 15 65, 45 40 Z"
+                    fill="#050811" stroke="currentColor" stroke-width="3" id="svg-helmet-outline" class="text-cyber-cyan opacity-90"/>
+              <!-- Paneles laterales de mejilla con icono LED dinámico -->
+              <circle cx="56" cy="114" r="15" fill="#0b1324" stroke="currentColor" stroke-width="2.2" id="svg-cheek-left" class="text-cyber-cyan opacity-75"/>
+              <circle cx="344" cy="114" r="15" fill="#0b1324" stroke="currentColor" stroke-width="2.2" id="svg-cheek-right" class="text-cyber-cyan opacity-75"/>
+              <path id="svg-cheek-dot-left" d="M58 106 L51 115 L56 115 L54 122 L61 113 L56 113 Z" fill="currentColor" class="text-cyber-cyan opacity-90"/>
+              <path id="svg-cheek-dot-right" d="M346 106 L339 115 L344 115 L342 122 L349 113 L344 113 Z" fill="currentColor" class="text-cyber-cyan opacity-90"/>
+            </g>
+
+            <!-- GRUPO DE FACCIONES (Ojos LED limpios sin puntos blancos, Rubor y Boca Zig-Zag) -->
+            <g id="svg-face-group" style="transform-origin: 200px 95px;">
+              <!-- OJO IZQUIERDO LED -->
+              <g id="svg-eye-left-wrap" style="transform-origin: 125px 68px;">
+                <g id="svg-eye-left" class="text-cyber-cyan" stroke="currentColor" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M95 75 Q125 52 155 75" />
+                </g>
+              </g>
+
+              <!-- OJO DERECHO LED -->
+              <g id="svg-eye-right-wrap" style="transform-origin: 275px 68px;">
+                <g id="svg-eye-right" class="text-cyber-cyan" stroke="currentColor" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M245 75 Q275 52 305 75" />
+                </g>
+              </g>
+
+              <!-- RUBOR DIGITAL EN MEJILLAS -->
+              <g id="svg-blush-group" class="text-pink-400 opacity-0 transition-opacity duration-300" stroke="currentColor" stroke-width="3.5" stroke-linecap="round">
+                <line x1="76" y1="98" x2="84" y2="89" />
+                <line x1="88" y1="100" x2="96" y2="91" />
+                <line x1="304" y1="91" x2="312" y2="100" />
+                <line x1="316" y1="89" x2="324" y2="98" />
+              </g>
+
+              <!-- LÁGRIMAS DIGITALES (Solo en expresión Cry TwT) -->
+              <g id="svg-tears-group" class="text-sky-400 opacity-0 transition-opacity duration-300" stroke="currentColor" stroke-width="4" stroke-linecap="round">
+                <line x1="108" y1="84" x2="108" y2="106" />
+                <line x1="292" y1="84" x2="292" y2="106" />
+              </g>
+
+              <!-- BOCA DIGITAL EN ZIG-ZAG CON ANIMACIÓN DE HABLA Y MASTICACIÓN -->
+              <path id="svg-mouth"
+                    d="M115 128 L145 138 L172 124 L200 138 L228 124 L255 138 L285 128"
+                    stroke="currentColor" stroke-width="5.2" stroke-linecap="round" stroke-linejoin="round"
+                    class="text-cyber-cyan"/>
+            </g>
+          </svg>
+        </div>
+
+        <!-- Scanlines y telemetría táctil inferior + Ecualizador de Voz/DJ en Vivo -->
+        <div class="visor-scanlines absolute inset-0 z-20"></div>
+        <div class="absolute bottom-1.5 left-3 right-3 flex justify-between items-center text-[10px] font-mono text-cyan-300/80 z-20 pointer-events-none">
+          <div class="flex items-center gap-2 truncate">
+            <span id="hud-sensor-status" class="truncate">MIRADA 3D ACTIVA // MUEVE EL CURSOR O DEDO</span>
+            <div id="voice-eq-indicator" class="hidden items-end gap-0.5 h-3 px-1.5 py-0.5 rounded bg-slate-900/80 border border-cyan-400/40">
+              <span class="eq-bar w-0.5 bg-cyber-cyan rounded-full transition-all duration-75" style="height: 30%"></span>
+              <span class="eq-bar w-0.5 bg-pink-400 rounded-full transition-all duration-75" style="height: 80%"></span>
+              <span class="eq-bar w-0.5 bg-cyber-cyan rounded-full transition-all duration-75" style="height: 50%"></span>
+              <span class="eq-bar w-0.5 bg-emerald-400 rounded-full transition-all duration-75" style="height: 90%"></span>
+              <span class="eq-bar w-0.5 bg-cyber-cyan rounded-full transition-all duration-75" style="height: 40%"></span>
+            </div>
+          </div>
+          <span class="hidden sm:inline shrink-0">[CLICK = BOOP • DESLIZA = MIMOS]</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Barra de 16 Expresiones -->
+    <div class="mt-2 flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
+      <span class="text-[10px] font-mono text-slate-400 shrink-0 mr-0.5">EXPRESIONES:</span>
+      <button type="button" data-emo="happy" class="emo-btn shrink-0 px-2 py-0.5 rounded-md bg-slate-800/85 hover:bg-slate-700 border border-emerald-500/30 text-[11px] text-emerald-300 transition">^w^ Feliz</button>
+      <button type="button" data-emo="love" class="emo-btn shrink-0 px-2 py-0.5 rounded-md bg-slate-800/85 hover:bg-slate-700 border border-rose-500/30 text-[11px] text-rose-300 transition">♥w♥ Amor</button>
+      <button type="button" data-emo="blush" class="emo-btn shrink-0 px-2 py-0.5 rounded-md bg-slate-800/85 hover:bg-slate-700 border border-pink-500/30 text-[11px] text-pink-300 transition">&gt;w&lt; Sonrojo</button>
+      <button type="button" data-emo="excited" class="emo-btn shrink-0 px-2 py-0.5 rounded-md bg-slate-800/85 hover:bg-slate-700 border border-amber-500/30 text-[11px] text-amber-300 transition">✨ Estrellas</button>
+      <button type="button" data-emo="uwu" class="emo-btn shrink-0 px-2 py-0.5 rounded-md bg-slate-800/85 hover:bg-slate-700 border border-fuchsia-500/30 text-[11px] text-fuchsia-300 transition">UwU Tierno</button>
+      <button type="button" data-emo="surprised" class="emo-btn shrink-0 px-2 py-0.5 rounded-md bg-slate-800/85 hover:bg-slate-700 border border-sky-500/30 text-[11px] text-sky-300 transition">OwO Sorpresa</button>
+      <button type="button" data-emo="wink" class="emo-btn shrink-0 px-2 py-0.5 rounded-md bg-slate-800/85 hover:bg-slate-700 border border-teal-500/30 text-[11px] text-teal-300 transition">;w^ Guiño</button>
+      <button type="button" data-emo="cool" class="emo-btn shrink-0 px-2 py-0.5 rounded-md bg-slate-800/85 hover:bg-slate-700 border border-violet-500/30 text-[11px] text-violet-300 transition">▀▄▀ Cool</button>
+      <button type="button" data-emo="sleepy" class="emo-btn shrink-0 px-2 py-0.5 rounded-md bg-slate-800/85 hover:bg-slate-700 border border-indigo-500/30 text-[11px] text-indigo-300 transition">-w- Mimo</button>
+      <button type="button" data-emo="dizzy" class="emo-btn shrink-0 px-2 py-0.5 rounded-md bg-slate-800/85 hover:bg-slate-700 border border-lime-500/30 text-[11px] text-lime-300 transition">@w@ Mareado</button>
+      <button type="button" data-emo="angry" class="emo-btn shrink-0 px-2 py-0.5 rounded-md bg-slate-800/85 hover:bg-slate-700 border border-orange-500/30 text-[11px] text-orange-300 transition">&gt;:3 Puchero</button>
+      <button type="button" data-emo="cry" class="emo-btn shrink-0 px-2 py-0.5 rounded-md bg-slate-800/85 hover:bg-slate-700 border border-blue-500/30 text-[11px] text-blue-300 transition">TwT Lloroso</button>
+      <button type="button" data-emo="music" class="emo-btn shrink-0 px-2 py-0.5 rounded-md bg-slate-800/85 hover:bg-slate-700 border border-emerald-400/30 text-[11px] text-emerald-200 transition">🎵 Música</button>
+      <button type="button" data-emo="glitch" class="emo-btn shrink-0 px-2 py-0.5 rounded-md bg-slate-800/85 hover:bg-slate-700 border border-cyan-400/40 text-[11px] text-cyan-200 transition">⚡ Glitch</button>
+      <button type="button" data-emo="thinking" class="emo-btn shrink-0 px-2 py-0.5 rounded-md bg-slate-800/85 hover:bg-slate-700 border border-purple-500/30 text-[11px] text-purple-300 transition">o_- Pensar</button>
+      <button type="button" data-emo="neutral" class="emo-btn shrink-0 px-2 py-0.5 rounded-md bg-slate-800/85 hover:bg-slate-700 border border-cyan-500/30 text-[11px] text-cyan-300 transition">🟢 Normal</button>
+    </div>
+
+    <!-- Barra Interactiva de Snacks Cyber, Símbolos de Mejilla y Cuidado de Nova-7 -->
+    <div class="mt-1.5 flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
+      <span class="text-[10px] font-mono text-cyan-400/80 shrink-0 mr-0.5">DAR SNACK:</span>
+      <button type="button" data-snack="ram" class="snack-btn shrink-0 px-2.5 py-0.5 rounded-md bg-slate-800/90 hover:bg-slate-700 active:scale-95 border border-cyan-500/40 text-[11px] text-cyan-200 transition">💾 Dar RAM</button>
+      <button type="button" data-snack="cookie" class="snack-btn shrink-0 px-2.5 py-0.5 rounded-md bg-slate-800/90 hover:bg-slate-700 active:scale-95 border border-amber-500/40 text-[11px] text-amber-200 transition">🍪 Galleta</button>
+      <button type="button" data-snack="coffee" class="snack-btn shrink-0 px-2.5 py-0.5 rounded-md bg-slate-800/90 hover:bg-slate-700 active:scale-95 border border-rose-500/40 text-[11px] text-rose-200 transition">☕ Café Cyber</button>
+      <button type="button" data-snack="battery" class="snack-btn shrink-0 px-2.5 py-0.5 rounded-md bg-slate-800/90 hover:bg-slate-700 active:scale-95 border border-emerald-500/40 text-[11px] text-emerald-200 transition">🔋 Batería 100%</button>
+      <span class="text-slate-700">|</span>
+      <button id="cheek-symbol-btn" type="button" class="shrink-0 px-2.5 py-0.5 rounded-md bg-slate-800/90 hover:bg-slate-700 active:scale-95 border border-purple-500/40 text-[11px] text-purple-200 transition">
+        <span id="cheek-symbol-label">⚡ Mejilla: Rayo</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ==========================================================================
+       SECCIÓN B: HISTORIAL DE CHAT Y CONTROLES TÁCTILES MULTITEMA
+       ========================================================================== -->
+  <main class="flex-1 flex flex-col min-h-0 bg-cyber-bg relative">
+
+    <div id="chat-messages" class="chat-scroll flex-1 overflow-y-auto px-3 sm:px-4 py-3.5 space-y-3 select-text"></div>
+
+    <div id="typing-indicator" class="hidden px-4 py-1.5 text-xs font-mono text-cyan-400 flex items-center gap-2 bg-cyber-bg/95 border-t border-slate-800/50">
+      <span class="inline-block w-2 h-2 rounded-full bg-cyber-cyan animate-ping"></span>
+      <span id="typing-text">Nova-7 está escribiendo...</span>
+    </div>
+
+    <!-- Botones Rápidos (Preguntas de Todo Tipo + Interacción) -->
+    <div class="shrink-0 px-3 pt-1.5 pb-1.5 flex gap-2 overflow-x-auto no-scrollbar border-t border-slate-800/60 bg-slate-950/70">
+      <button type="button" data-quick="¡Hola Nova! ¿Cómo estás hoy?"
+        class="quick-btn shrink-0 px-3 py-1.5 rounded-full bg-slate-800/90 hover:bg-slate-700 active:scale-95 border border-cyan-500/30 text-xs text-cyan-200 transition">
+        👋 ¿Cómo estás?
+      </button>
+      <button type="button" data-quick="¿Qué cosas recuerdas sobre mí en tu memoria?"
+        class="quick-btn shrink-0 px-3 py-1.5 rounded-full bg-slate-800/90 hover:bg-slate-700 active:scale-95 border border-fuchsia-500/30 text-xs text-fuchsia-200 transition">
+        🧠 ¿Qué recuerdas de mí?
+      </button>
+      <button type="button" data-quick="Explícame cómo funcionan los agujeros negros en el universo"
+        class="quick-btn shrink-0 px-3 py-1.5 rounded-full bg-slate-800/90 hover:bg-slate-700 active:scale-95 border border-purple-500/30 text-xs text-purple-200 transition">
+        🌌 Agujeros Negros
+      </button>
+      <button type="button" data-quick="Dame 3 datos curiosos e interesantes sobre la comunidad furry"
+        class="quick-btn shrink-0 px-3 py-1.5 rounded-full bg-slate-800/90 hover:bg-slate-700 active:scale-95 border border-pink-500/30 text-xs text-pink-200 transition">
+        🐾 Datos Furry
+      </button>
+      <button type="button" data-quick="Recomiéndame un buen videojuego o anime y dime por qué vale la pena"
+        class="quick-btn shrink-0 px-3 py-1.5 rounded-full bg-slate-800/90 hover:bg-slate-700 active:scale-95 border border-emerald-500/30 text-xs text-emerald-200 transition">
+        🎮 Juegos / Anime
+      </button>
+      <button type="button" data-quick="Cuéntame un chiste divertido para alegrar el día"
+        class="quick-btn shrink-0 px-3 py-1.5 rounded-full bg-slate-800/90 hover:bg-slate-700 active:scale-95 border border-amber-500/30 text-xs text-amber-200 transition">
+        😄 Contar Chiste
+      </button>
+    </div>
+
+    <!-- Barra Inferior de Entrada de Texto + Micrófono de Voz -->
+    <form id="chat-form" class="shrink-0 p-2.5 sm:p-3 bg-cyber-panel border-t border-slate-800 flex items-center gap-2">
+      <button
+        id="mic-btn"
+        type="button"
+        title="Hablar con Nova-7 usando tu micrófono"
+        aria-label="Hablar por micrófono"
+        class="shrink-0 px-3.5 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 border border-cyan-500/40 text-cyan-300 text-sm sm:text-base transition flex items-center justify-center">
+        <span id="mic-icon">🎙️</span>
+      </button>
+      <input
+        id="chat-input"
+        type="text"
+        autocomplete="off"
+        placeholder="Escribe o pulsa 🎙️ para hablar con Nova-7..."
+        class="flex-1 min-w-0 px-4 py-3 rounded-xl bg-slate-900/90 border border-slate-700 focus:border-cyber-cyan focus:outline-none focus:ring-1 focus:ring-cyber-cyan text-sm sm:text-base text-slate-100 placeholder-slate-400 transition"
+      />
+      <button
+        id="send-btn"
+        type="submit"
+        aria-label="Enviar mensaje"
+        class="shrink-0 px-5 py-3 rounded-xl bg-cyan-500 hover:bg-cyan-400 active:scale-95 text-slate-950 font-semibold text-sm sm:text-base shadow-[0_0_15px_rgba(0,240,255,0.35)] transition flex items-center gap-1.5 disabled:opacity-50">
+        <span>Enviar</span>
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.3" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14M13 5l7 7-7 7" />
+        </svg>
+      </button>
+    </form>
+  </main>
+
+  <!-- ==========================================================================
+       MODAL DE CONFIGURACIÓN DE IA, MEMORIA PERSISTENTE Y PERSONALIDAD
+       ========================================================================== -->
+  <div id="settings-modal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="w-full max-w-md rounded-2xl bg-slate-900 border border-cyan-500/40 shadow-2xl p-5 space-y-4 text-slate-100 max-h-[90dvh] overflow-y-auto">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h2 class="text-base font-mono font-bold text-cyber-cyan">⚙️ PERSONALIDAD, IA Y MEMORIA</h2>
+        <button id="close-settings-btn" type="button" class="text-slate-400 hover:text-white text-lg px-2">✕</button>
+      </div>
+
+      <!-- Panel de Memoria Persistente del Usuario -->
+      <div class="p-3 rounded-xl bg-slate-950/90 border border-fuchsia-500/30 space-y-2">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-mono font-bold text-fuchsia-300">🧠 MEMORIA DE NOVA-7 SOBRE TI</span>
+          <button id="clear-memory-btn" type="button" class="text-[10px] font-mono text-rose-300 hover:underline">Olvidar datos</button>
+        </div>
+        <div id="memory-summary-box" class="text-xs text-slate-300 space-y-1 leading-relaxed">
+          Cuéntale a Nova-7 cómo te llamas, cuál es tu fursona, qué juegos/anime te gustan o qué estudias y lo recordará automáticamente.
+        </div>
+      </div>
+
+      <div class="space-y-1">
+        <label class="block text-xs font-mono text-slate-300">Nombre de tu Protogen:</label>
+        <input id="cfg-bot-name" type="text" value="Nova-7"
+          class="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-sm text-white focus:border-cyber-cyan focus:outline-none" />
+      </div>
+
+      <div class="space-y-1">
+        <label class="block text-xs font-mono text-cyan-300">Gemini API Key (Opcional):</label>
+        <input id="cfg-gemini-key" type="password" placeholder="Pega tu clave AIzaSy... si deseas usar Gemini directo"
+          class="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-sm text-white focus:border-cyber-cyan focus:outline-none" />
+        <p class="text-[11px] text-slate-400">Vacío = Usa el Cerebro Híbrido Instantáneo + IA Multi-Modelo (27B/20B).</p>
+      </div>
+
+      <div class="space-y-1">
+        <label class="block text-xs font-mono text-slate-300">Personalidad e Instrucciones (System Prompt):</label>
+        <textarea id="cfg-system-prompt" rows="3"
+          class="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-xs text-slate-200 focus:border-cyber-cyan focus:outline-none leading-relaxed"></textarea>
+      </div>
+
+      <div class="flex items-center justify-between pt-1 border-t border-slate-800 text-xs">
+        <button id="reset-visor-btn" type="button"
+          class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition">
+          🔄 Restaurar Visor LED
+        </button>
+        <button id="clear-chat-btn" type="button"
+          class="px-3 py-1.5 rounded-lg bg-rose-950/60 hover:bg-rose-900/70 text-rose-200 border border-rose-700/40 transition">
+          🗑️ Limpiar Chat
+        </button>
+      </div>
+
+      <div class="pt-2">
+        <button id="save-settings-btn" type="button"
+          class="w-full py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-sm transition">
+          Guardar Cambios
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================================================
+       LÓGICA DE LA APLICACIÓN (FÍSICA DE CURSOR 60FPS + 16 EXPRESIONES + CEREBRO HÍBRIDO)
+       ========================================================================== -->
+  <script>
+    /**
+     * ============================================================================
+     * BLOQUE 1: CATÁLOGO DE 16 EXPRESIONES DEL VISOR PROTOGEN
+     * ============================================================================
+     */
+    const VISOR_CONFIG = {
+      defaultVisorImage: "",
+      expressionImages: {},
+      emotions: {
+        neutral: {
+          label: "EN LÍNEA ^w^",
+          glow: "rgba(0, 240, 255, 0.32)",
+          border: "rgba(0, 240, 255, 0.65)",
+          colorClass: "text-cyber-cyan",
+          showBlush: false, showTears: false, showPupils: true, earAngle: 0,
+          eyeLeft: "M95 75 Q125 52 155 75",
+          eyeRight: "M245 75 Q275 52 305 75",
+          mouth: "M115 128 L145 138 L172 124 L200 138 L228 124 L255 138 L285 128"
+        },
+        happy: {
+          label: "FELIZ ^w^",
+          glow: "rgba(16, 185, 129, 0.38)",
+          border: "rgba(16, 185, 129, 0.78)",
+          colorClass: "text-emerald-400",
+          showBlush: true, showTears: false, showPupils: false, earAngle: -6,
+          eyeLeft: "M95 80 L125 48 L155 80",
+          eyeRight: "M245 80 L275 48 L305 80",
+          mouth: "M110 122 L145 143 L175 125 L200 145 L225 125 L255 143 L290 122"
+        },
+        love: {
+          label: "ENAMORADO ♥w♥",
+          glow: "rgba(244, 63, 94, 0.44)",
+          border: "rgba(244, 63, 94, 0.85)",
+          colorClass: "text-rose-400",
+          showBlush: true, showTears: false, showPupils: false, earAngle: -10,
+          eyeLeft: "M125 86 C125 86 96 68 96 54 C96 43 112 41 125 55 C138 41 154 43 154 54 C154 68 125 86 125 86 Z",
+          eyeRight: "M275 86 C275 86 246 68 246 54 C246 43 262 41 275 55 C288 41 304 43 304 54 C304 68 275 86 275 86 Z",
+          mouth: "M112 122 L148 144 L176 125 L200 145 L224 125 L252 144 L288 122"
+        },
+        blush: {
+          label: "SONROJADO >w<",
+          glow: "rgba(236, 72, 153, 0.44)",
+          border: "rgba(236, 72, 153, 0.85)",
+          colorClass: "text-pink-400",
+          showBlush: true, showTears: false, showPupils: false, earAngle: 12,
+          eyeLeft: "M96 56 L150 71 L96 86",
+          eyeRight: "M304 56 L250 71 L304 86",
+          mouth: "M120 125 L150 142 L175 123 L200 142 L225 123 L250 142 L280 125"
+        },
+        excited: {
+          label: "ESTRELLAS ✨",
+          glow: "rgba(245, 158, 11, 0.44)",
+          border: "rgba(245, 158, 11, 0.85)",
+          colorClass: "text-amber-400",
+          showBlush: true, showTears: false, showPupils: false, earAngle: -12,
+          eyeLeft: "M125 44 L133 63 L153 68 L133 73 L125 92 L117 73 L97 68 L117 63 Z",
+          eyeRight: "M275 44 L283 63 L303 68 L283 73 L275 92 L267 73 L247 68 L267 63 Z",
+          mouth: "M105 116 L145 146 L175 122 L200 148 L225 122 L255 146 L295 116"
+        },
+        uwu: {
+          label: "TERNURA UwU",
+          glow: "rgba(217, 70, 239, 0.38)",
+          border: "rgba(217, 70, 239, 0.78)",
+          colorClass: "text-fuchsia-400",
+          showBlush: true, showTears: false, showPupils: false, earAngle: 8,
+          eyeLeft: "M95 62 Q125 90 155 62",
+          eyeRight: "M245 62 Q275 90 305 62",
+          mouth: "M122 126 Q160 146 200 126 Q240 146 278 126"
+        },
+        surprised: {
+          label: "SORPRENDIDO OwO",
+          glow: "rgba(56, 189, 248, 0.42)",
+          border: "rgba(56, 189, 248, 0.82)",
+          colorClass: "text-sky-400",
+          showBlush: false, showTears: false, showPupils: true, earAngle: -14,
+          eyeLeft: "M102 68 A23 23 0 1 1 148 68 A23 23 0 1 1 102 68",
+          eyeRight: "M252 68 A23 23 0 1 1 298 68 A23 23 0 1 1 252 68",
+          mouth: "M176 130 A24 15 0 1 1 224 130 A24 15 0 1 1 176 130"
+        },
+        wink: {
+          label: "GUIÑO ;w^",
+          glow: "rgba(45, 212, 191, 0.38)",
+          border: "rgba(45, 212, 191, 0.78)",
+          colorClass: "text-teal-400",
+          showBlush: true, showTears: false, showPupils: false, earAngle: -5,
+          eyeLeft: "M96 72 Q125 84 154 64",
+          eyeRight: "M245 80 L275 48 L305 80",
+          mouth: "M118 128 L148 140 L175 125 L202 140 L230 124 L262 136 L290 116"
+        },
+        cool: {
+          label: "MODO PRO ▀▄▀",
+          glow: "rgba(139, 92, 246, 0.44)",
+          border: "rgba(139, 92, 246, 0.85)",
+          colorClass: "text-violet-400",
+          showBlush: false, showTears: false, showPupils: false, earAngle: -4,
+          eyeLeft: "M82 56 L178 56 L166 84 L92 84 Z",
+          eyeRight: "M222 56 L318 56 L308 84 L234 84 Z",
+          mouth: "M130 132 L175 136 L210 124 L250 132 L288 118"
+        },
+        sleepy: {
+          label: "MIMO / RELAJADO -w-",
+          glow: "rgba(129, 140, 248, 0.34)",
+          border: "rgba(129, 140, 248, 0.70)",
+          colorClass: "text-indigo-300",
+          showBlush: true, showTears: false, showPupils: false, earAngle: 14,
+          eyeLeft: "M95 72 L155 72",
+          eyeRight: "M245 72 L305 72",
+          mouth: "M135 130 L165 138 L200 126 L235 138 L265 130"
+        },
+        dizzy: {
+          label: "MAREADO @w@",
+          glow: "rgba(163, 230, 53, 0.40)",
+          border: "rgba(163, 230, 53, 0.80)",
+          colorClass: "text-lime-400",
+          showBlush: false, showTears: false, showPupils: false, earAngle: 16,
+          eyeLeft: "M125 68 m-22 0 a22 22 0 1 0 44 0 a16 16 0 1 0 -32 0 a10 10 0 1 0 20 0",
+          eyeRight: "M275 68 m-22 0 a22 22 0 1 0 44 0 a16 16 0 1 0 -32 0 a10 10 0 1 0 20 0",
+          mouth: "M115 132 Q145 115 175 132 T235 132 T285 132"
+        },
+        angry: {
+          label: "PUCHERO >:3",
+          glow: "rgba(249, 115, 22, 0.42)",
+          border: "rgba(249, 115, 22, 0.82)",
+          colorClass: "text-orange-400",
+          showBlush: true, showTears: false, showPupils: true, earAngle: -15,
+          eyeLeft: "M95 56 L155 76 L95 82",
+          eyeRight: "M305 56 L245 76 L305 82",
+          mouth: "M125 136 L155 124 L185 136 L200 126 L215 136 L245 124 L275 136"
+        },
+        cry: {
+          label: "LLOROSO TwT",
+          glow: "rgba(59, 130, 246, 0.40)",
+          border: "rgba(59, 130, 246, 0.80)",
+          colorClass: "text-blue-400",
+          showBlush: true, showTears: true, showPupils: false, earAngle: 18,
+          eyeLeft: "M95 66 L155 66",
+          eyeRight: "M245 66 L305 66",
+          mouth: "M130 138 Q165 120 200 136 Q235 120 270 138"
+        },
+        music: {
+          label: "MODO MÚSICA 🎵",
+          glow: "rgba(52, 211, 153, 0.42)",
+          border: "rgba(52, 211, 153, 0.82)",
+          colorClass: "text-emerald-300",
+          showBlush: true, showTears: false, showPupils: false, earAngle: -10,
+          eyeLeft: "M95 76 Q125 44 155 76",
+          eyeRight: "M245 76 Q275 44 305 76",
+          mouth: "M110 128 L130 112 L150 138 L175 110 L200 142 L225 110 L250 138 L270 112 L290 128"
+        },
+        glitch: {
+          label: "SYSTEM GLITCH ⚡",
+          glow: "rgba(0, 240, 255, 0.50)",
+          border: "rgba(236, 72, 153, 0.90)",
+          colorClass: "text-cyber-cyan",
+          showBlush: false, showTears: false, showPupils: true, earAngle: 10,
+          eyeLeft: "M92 60 L158 60 L140 82 L105 82 Z",
+          eyeRight: "M245 52 L298 84 M298 52 L245 84",
+          mouth: "M110 128 L150 128 L160 114 L195 142 L215 118 L245 128 L290 128"
+        },
+        thinking: {
+          label: "ANALIZANDO...",
+          glow: "rgba(168, 85, 247, 0.38)",
+          border: "rgba(168, 85, 247, 0.75)",
+          colorClass: "text-purple-400",
+          showBlush: false, showTears: false, showPupils: true, earAngle: -4,
+          eyeLeft: "M95 74 L155 74",
+          eyeRight: "M245 58 Q275 38 305 64",
+          mouth: "M125 132 L165 132 L195 124 L235 135 L275 132"
+        }
+      }
+    };
+
+    const DEFAULT_SYSTEM_PROMPT = `Eres Nova-7, un Protogen muy inteligente, dulce, culto y carismático.
+Respondes preguntas de CUALQUIER TEMA (ciencia, universo, matemáticas, programación, historia, videojuegos, anime, recetas, consejos o cultura furry) en español, de forma directa, clara y cálida.`;
+
+    function loadSavedMemory() {
+      try {
+        const raw = localStorage.getItem("proto_v7_user_memory");
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          return {
+            name: parsed.name || localStorage.getItem("proto_user_name") || "",
+            fursona: parsed.fursona || "",
+            likes: Array.isArray(parsed.likes) ? parsed.likes : [],
+            notes: Array.isArray(parsed.notes) ? parsed.notes : []
+          };
+        }
+      } catch (e) {}
+      return {
+        name: localStorage.getItem("proto_user_name") || "",
+        fursona: "",
+        likes: [],
+        notes: []
+      };
+    }
+
+    function loadSavedChatHistory() {
+      try {
+        const raw = localStorage.getItem("proto_v7_chat_history");
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) return parsed.slice(-24);
+        }
+      } catch (e) {}
+      return [];
+    }
+
+    const COLOR_THEMES = {
+      auto: { label: "🎨 Color: Auto", colorClass: null, glow: null, border: null },
+      cyan: { label: "🎨 Neón Cian", colorClass: "text-cyber-cyan", glow: "rgba(0, 240, 255, 0.42)", border: "rgba(0, 240, 255, 0.85)" },
+      synthwave: { label: "🎨 Synthwave", colorClass: "text-pink-400", glow: "rgba(244, 114, 182, 0.45)", border: "rgba(236, 72, 153, 0.88)" },
+      crimson: { label: "🎨 Carmesí", colorClass: "text-rose-400", glow: "rgba(251, 113, 133, 0.45)", border: "rgba(244, 63, 94, 0.88)" },
+      gold: { label: "🎨 Dorado", colorClass: "text-amber-400", glow: "rgba(251, 191, 36, 0.45)", border: "rgba(245, 158, 11, 0.88)" },
+      rgb: { label: "🌈 RGB Arcoíris", colorClass: "text-cyber-cyan", glow: "rgba(0, 240, 255, 0.45)", border: "rgba(0, 240, 255, 0.88)" }
+    };
+
+    const CHEEK_SYMBOLS = {
+      bolt: {
+        label: "⚡ Mejilla: Rayo",
+        left: "M58 106 L51 115 L56 115 L54 122 L61 113 L56 113 Z",
+        right: "M346 106 L339 115 L344 115 L342 122 L349 113 L344 113 Z"
+      },
+      heart: {
+        label: "💖 Mejilla: Corazón",
+        left: "M56 121 C56 121 48 115 48 110 C48 107 52 106 56 110 C60 106 64 107 64 110 C64 115 56 121 56 121 Z",
+        right: "M344 121 C344 121 336 115 336 110 C336 107 340 106 344 110 C348 106 352 107 352 110 C352 115 344 121 344 121 Z"
+      },
+      star: {
+        label: "✨ Mejilla: Estrella",
+        left: "M56 105 L58.5 111.5 L65 114 L58.5 116.5 L56 123 L53.5 116.5 L47 114 L53.5 111.5 Z",
+        right: "M344 105 L346.5 111.5 L353 114 L346.5 116.5 L344 123 L341.5 116.5 L335 114 L341.5 111.5 Z"
+      },
+      music: {
+        label: "🎵 Mejilla: Música",
+        left: "M53 119 A3 3 0 1 1 53 113 L53 107 L61 105 L61 116 A3 3 0 1 1 61 110 L61 108 L55 109 L55 119 Z",
+        right: "M341 119 A3 3 0 1 1 341 113 L341 107 L349 105 L349 116 A3 3 0 1 1 349 110 L349 108 L343 109 L343 119 Z"
+      },
+      paw: {
+        label: "🐾 Mejilla: Huella",
+        left: "M52 117 C52 114 60 114 60 117 C60 120 52 120 52 117 Z M50 111 A1.8 1.8 0 1 1 50 110.9 M54 109 A1.8 1.8 0 1 1 54 108.9 M58 109 A1.8 1.8 0 1 1 58 108.9 M62 111 A1.8 1.8 0 1 1 62 110.9",
+        right: "M340 117 C340 114 348 114 348 117 C348 120 340 120 340 117 Z M338 111 A1.8 1.8 0 1 1 338 110.9 M342 109 A1.8 1.8 0 1 1 342 108.9 M346 109 A1.8 1.8 0 1 1 346 108.9 M350 111 A1.8 1.8 0 1 1 350 110.9"
+      }
+    };
+
+    const appState = {
+      botName: localStorage.getItem("proto_v6_bot_name") || "Nova-7",
+      geminiKey: localStorage.getItem("proto_v6_gemini_key") || "",
+      systemPrompt: localStorage.getItem("proto_v6_system_prompt") || DEFAULT_SYSTEM_PROMPT,
+      savedVisorImg: localStorage.getItem("proto_visor_img") || "",
+      voiceMode: localStorage.getItem("proto_voice_mode") || "both", // "both" | "synth" | "mute"
+      colorTheme: localStorage.getItem("proto_color_theme") || "auto",
+      cheekSymbol: localStorage.getItem("proto_cheek_symbol") || "bolt",
+      userMemory: loadSavedMemory(),
+      chatHistory: loadSavedChatHistory(),
+      currentEmotion: "happy",
+      affection: Number(localStorage.getItem("proto_affection")) || 45,
+      energy: Number(localStorage.getItem("proto_energy")) || 88,
+      lastPickIndex: {}
+    };
+
+    const dom = {
+      visorContainer: document.getElementById("visor-container"),
+      visorImg: document.getElementById("protogen-visor-img"),
+      visorSvgFallback: document.getElementById("protogen-svg-fallback"),
+      svgEarsGroup: document.getElementById("svg-ears-group"),
+      svgEarLeft: document.getElementById("svg-ear-left"),
+      svgEarRight: document.getElementById("svg-ear-right"),
+      svgHeadFluff: document.getElementById("svg-head-fluff"),
+      svgHelmetGroup: document.getElementById("svg-helmet-group"),
+      svgFaceGroup: document.getElementById("svg-face-group"),
+      svgHelmetOutline: document.getElementById("svg-helmet-outline"),
+      svgCheekLeft: document.getElementById("svg-cheek-left"),
+      svgCheekRight: document.getElementById("svg-cheek-right"),
+      svgCheekDotLeft: document.getElementById("svg-cheek-dot-left"),
+      svgCheekDotRight: document.getElementById("svg-cheek-dot-right"),
+      svgEyeLeftWrap: document.getElementById("svg-eye-left-wrap"),
+      svgEyeRightWrap: document.getElementById("svg-eye-right-wrap"),
+      svgEyeLeft: document.querySelector("#svg-eye-left path"),
+      svgEyeRight: document.querySelector("#svg-eye-right path"),
+      svgBlushGroup: document.getElementById("svg-blush-group"),
+      svgTearsGroup: document.getElementById("svg-tears-group"),
+      svgMouth: document.getElementById("svg-mouth"),
+      emotionBadge: document.getElementById("emotion-badge"),
+      themeCycleBtn: document.getElementById("theme-cycle-btn"),
+      themeCycleLabel: document.getElementById("theme-cycle-label"),
+      djModeBtn: document.getElementById("dj-mode-btn"),
+      djModeLabel: document.getElementById("dj-mode-label"),
+      voiceModeBtn: document.getElementById("voice-mode-btn"),
+      voiceModeLabel: document.getElementById("voice-mode-label"),
+      voiceEqIndicator: document.getElementById("voice-eq-indicator"),
+      affectionBar: document.getElementById("affection-bar"),
+      energyBar: document.getElementById("energy-bar"),
+      memoryHudPill: document.getElementById("memory-hud-pill"),
+      gazeCoords: document.getElementById("gaze-coords"),
+      hudSensorStatus: document.getElementById("hud-sensor-status"),
+      botNameHeader: document.getElementById("bot-name-header"),
+      customVisorUpload: document.getElementById("custom-visor-upload"),
+      chatMessages: document.getElementById("chat-messages"),
+      typingIndicator: document.getElementById("typing-indicator"),
+      typingText: document.getElementById("typing-text"),
+      chatForm: document.getElementById("chat-form"),
+      chatInput: document.getElementById("chat-input"),
+      sendBtn: document.getElementById("send-btn"),
+      micBtn: document.getElementById("mic-btn"),
+      micIcon: document.getElementById("mic-icon"),
+      quickBtns: document.querySelectorAll(".quick-btn"),
+      emoBtns: document.querySelectorAll(".emo-btn"),
+      snackBtns: document.querySelectorAll(".snack-btn"),
+      cheekSymbolBtn: document.getElementById("cheek-symbol-btn"),
+      cheekSymbolLabel: document.getElementById("cheek-symbol-label"),
+      settingsModal: document.getElementById("settings-modal"),
+      openSettingsBtn: document.getElementById("open-settings-btn"),
+      closeSettingsBtn: document.getElementById("close-settings-btn"),
+      saveSettingsBtn: document.getElementById("save-settings-btn"),
+      resetVisorBtn: document.getElementById("reset-visor-btn"),
+      clearChatBtn: document.getElementById("clear-chat-btn"),
+      clearMemoryBtn: document.getElementById("clear-memory-btn"),
+      memorySummaryBox: document.getElementById("memory-summary-box"),
+      cfgBotName: document.getElementById("cfg-bot-name"),
+      cfgGeminiKey: document.getElementById("cfg-gemini-key"),
+      cfgSystemPrompt: document.getElementById("cfg-system-prompt")
+    };
+
+    /**
+     * ============================================================================
+     * BLOQUE 2: CONTROLADOR DE EXPRESIONES, TEMAS DE COLOR, SÍMBOLOS Y MODO DJ
+     * ============================================================================
+     */
+    const lipSyncState = {
+      active: false,
+      openness: 0,
+      targetOpenness: 0,
+      phase: 0,
+      cadenceTimer: null,
+      stopTimeout: null
+    };
+
+    const chewState = {
+      active: false,
+      phase: 0,
+      timer: null
+    };
+
+    const djState = {
+      active: false,
+      stepIndex: 0,
+      beatEnergy: 0,
+      intervalId: null
+    };
+
+    const lifeState = {
+      lastInteractionTime: Date.now(),
+      lastMicroEventTime: Date.now(),
+      isSleeping: false,
+      rgbHue: 185,
+      autoGazeX: 0,
+      autoGazeY: 0,
+      nextGazeShiftTime: Date.now() + 4500
+    };
+
+    let sharedAudioCtx = null;
+    function getAudioCtx() {
+      if (!sharedAudioCtx) {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (AudioContextClass) sharedAudioCtx = new AudioContextClass();
+      }
+      if (sharedAudioCtx && sharedAudioCtx.state === "suspended") {
+        sharedAudioCtx.resume().catch(() => {});
+      }
+      return sharedAudioCtx;
+    }
+
+    function registerUserActivity() {
+      const wasSleeping = lifeState.isSleeping;
+      lifeState.lastInteractionTime = Date.now();
+      if (wasSleeping) {
+        lifeState.isSleeping = false;
+        physics.squishScaleY = 1.1;
+        physics.squishScaleX = 0.94;
+        setProtogenEmotion("happy", true);
+        playSynthSyllable("a", "excited", 0.7);
+        dom.hudSensorStatus.textContent = "✨ ¡DESPIERTO Y ATENTO A TI! ^w^";
+      }
+    }
+
+    function updateVoiceModeUI() {
+      if (!dom.voiceModeLabel || !dom.voiceModeBtn) return;
+      if (appState.voiceMode === "both") {
+        dom.voiceModeLabel.textContent = "🔊 Voz + Synth";
+        dom.voiceModeBtn.className = "px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 active:scale-95 border border-emerald-500/40 text-[11px] text-emerald-300 transition flex items-center gap-1";
+      } else if (appState.voiceMode === "synth") {
+        dom.voiceModeLabel.textContent = "🎵 Voz Synth";
+        dom.voiceModeBtn.className = "px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 active:scale-95 border border-pink-500/40 text-[11px] text-pink-300 transition flex items-center gap-1";
+      } else {
+        dom.voiceModeLabel.textContent = "🔇 Silencio";
+        dom.voiceModeBtn.className = "px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 active:scale-95 border border-slate-600 text-[11px] text-slate-400 transition flex items-center gap-1";
+      }
+    }
+
+    function applyCheekSymbol(symbolKey = appState.cheekSymbol) {
+      const sym = CHEEK_SYMBOLS[symbolKey] || CHEEK_SYMBOLS.bolt;
+      appState.cheekSymbol = symbolKey;
+      localStorage.setItem("proto_cheek_symbol", symbolKey);
+      if (dom.svgCheekDotLeft) dom.svgCheekDotLeft.setAttribute("d", sym.left);
+      if (dom.svgCheekDotRight) dom.svgCheekDotRight.setAttribute("d", sym.right);
+      if (dom.cheekSymbolLabel) dom.cheekSymbolLabel.textContent = sym.label;
+    }
+
+    function applyVisorTheme() {
+      const themeKey = appState.colorTheme || "auto";
+      const theme = COLOR_THEMES[themeKey] || COLOR_THEMES.auto;
+      if (dom.themeCycleLabel) dom.themeCycleLabel.textContent = theme.label;
+
+      const emotion = VISOR_CONFIG.emotions[appState.currentEmotion] || VISOR_CONFIG.emotions.neutral;
+      const glow = theme.glow || emotion.glow;
+      const border = theme.border || emotion.border;
+      const colorClass = theme.colorClass || emotion.colorClass;
+
+      dom.visorContainer.style.setProperty("--visor-glow", glow);
+      dom.visorContainer.style.setProperty("--visor-border", border);
+
+      const coloredElements = [
+        dom.svgEyeLeft.parentElement,
+        dom.svgEyeRight.parentElement,
+        dom.svgMouth,
+        dom.svgHelmetOutline,
+        dom.svgCheekLeft,
+        dom.svgCheekRight,
+        dom.svgCheekDotLeft,
+        dom.svgCheekDotRight,
+        dom.svgEarLeft,
+        dom.svgEarRight,
+        dom.svgHeadFluff
+      ];
+
+      coloredElements.forEach((el) => {
+        if (!el) return;
+        el.className.baseVal = colorClass;
+        if (themeKey !== "rgb") {
+          el.style.color = "";
+        }
+      });
+    }
+
+    function initVisorDisplay() {
+      dom.botNameHeader.textContent = `${appState.botName.toUpperCase()} // IA VIVA`;
+      updateVoiceModeUI();
+      applyCheekSymbol(appState.cheekSymbol);
+      dom.affectionBar.style.width = `${appState.affection}%`;
+      if (dom.energyBar) dom.energyBar.style.width = `${appState.energy}%`;
+      updateMemoryUI();
+
+      const initialImg = appState.savedVisorImg || VISOR_CONFIG.defaultVisorImage;
+      if (initialImg && initialImg.trim() !== "") {
+        setVisorImage(initialImg);
+      }
+      setProtogenEmotion("happy", false);
+      startVisorPhysicsLoop();
+      startAutoBlinkLoop();
+      startAutonomousLifeCycle();
+      if ("speechSynthesis" in window) {
+        window.speechSynthesis.getVoices();
+        window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+      }
+    }
+
+    function setVisorImage(imageSrc) {
+      if (!imageSrc) return;
+      dom.visorImg.src = imageSrc;
+      dom.visorImg.classList.remove("hidden");
+      dom.visorSvgFallback.classList.add("hidden");
+    }
+
+    function resetToSvgVisor() {
+      localStorage.removeItem("proto_visor_img");
+      appState.savedVisorImg = "";
+      dom.visorImg.src = "";
+      dom.visorImg.classList.add("hidden");
+      dom.visorSvgFallback.classList.remove("hidden");
+      setProtogenEmotion("happy", true);
+    }
+
+    function addAffection(amount) {
+      appState.affection = Math.max(10, Math.min(100, appState.affection + amount));
+      localStorage.setItem("proto_affection", String(appState.affection));
+      dom.affectionBar.style.width = `${appState.affection}%`;
+    }
+
+    function addEnergy(amount) {
+      appState.energy = Math.max(15, Math.min(100, appState.energy + amount));
+      localStorage.setItem("proto_energy", String(appState.energy));
+      if (dom.energyBar) dom.energyBar.style.width = `${appState.energy}%`;
+    }
+
+    function setProtogenEmotion(emotionKey = "neutral", isTalking = false) {
+      const emotion = VISOR_CONFIG.emotions[emotionKey] || VISOR_CONFIG.emotions.neutral;
+      appState.currentEmotion = emotionKey;
+
+      dom.emotionBadge.textContent = emotion.label;
+      dom.svgEyeLeft.setAttribute("d", emotion.eyeLeft);
+      dom.svgEyeRight.setAttribute("d", emotion.eyeRight);
+      if (!lipSyncState.active && !chewState.active && !djState.active) {
+        dom.svgMouth.setAttribute("d", emotion.mouth);
+      }
+
+      dom.svgBlushGroup.style.opacity = emotion.showBlush ? "0.92" : "0";
+      dom.svgTearsGroup.style.opacity = emotion.showTears ? "0.9" : "0";
+      physics.targetEarAngle = emotion.earAngle || 0;
+
+      // Símbolo automático sugerido en mejilla si el usuario no lo ha bloqueado manualmente
+      if (emotionKey === "love" || emotionKey === "blush" || emotionKey === "uwu") {
+        if (dom.svgCheekDotLeft) dom.svgCheekDotLeft.setAttribute("d", CHEEK_SYMBOLS.heart.left);
+        if (dom.svgCheekDotRight) dom.svgCheekDotRight.setAttribute("d", CHEEK_SYMBOLS.heart.right);
+      } else if (emotionKey === "excited") {
+        if (dom.svgCheekDotLeft) dom.svgCheekDotLeft.setAttribute("d", CHEEK_SYMBOLS.star.left);
+        if (dom.svgCheekDotRight) dom.svgCheekDotRight.setAttribute("d", CHEEK_SYMBOLS.star.right);
+      } else if (emotionKey === "music") {
+        if (dom.svgCheekDotLeft) dom.svgCheekDotLeft.setAttribute("d", CHEEK_SYMBOLS.music.left);
+        if (dom.svgCheekDotRight) dom.svgCheekDotRight.setAttribute("d", CHEEK_SYMBOLS.music.right);
+      } else {
+        const currentSym = CHEEK_SYMBOLS[appState.cheekSymbol] || CHEEK_SYMBOLS.bolt;
+        if (dom.svgCheekDotLeft) dom.svgCheekDotLeft.setAttribute("d", currentSym.left);
+        if (dom.svgCheekDotRight) dom.svgCheekDotRight.setAttribute("d", currentSym.right);
+      }
+
+      dom.visorSvgFallback.classList.toggle("animate-glitch", emotionKey === "glitch");
+      applyVisorTheme();
+
+      const activeVisual = !dom.visorImg.classList.contains("hidden") ? dom.visorImg : dom.visorSvgFallback;
+      if (isTalking) {
+        activeVisual.classList.add("animate-visor-talking");
+        setTimeout(() => {
+          activeVisual.classList.remove("animate-visor-talking");
+        }, 1600);
+      }
+    }
+
+    /**
+     * ============================================================================
+     * MOTOR DE VOZ MASCULINA AMIGABLE + SINTETIZADOR PROTOGEN + MODO DJ SYNTHWAVE
+     * ============================================================================
+     */
+    const EMOTION_SCALES = {
+      happy: [523.25, 587.33, 659.25, 783.99, 880.0, 1046.5],
+      love: [587.33, 659.25, 739.99, 880.0, 987.77, 1174.66],
+      blush: [659.25, 739.99, 830.61, 987.77, 1108.73],
+      excited: [659.25, 783.99, 880.0, 1046.5, 1174.66, 1318.5],
+      uwu: [493.88, 587.33, 659.25, 783.99, 880.0],
+      surprised: [587.33, 783.99, 987.77, 1174.66],
+      wink: [523.25, 659.25, 783.99, 987.77, 1046.5],
+      cool: [392.0, 440.0, 523.25, 587.33, 659.25],
+      sleepy: [349.23, 392.0, 440.0, 523.25],
+      dizzy: [440.0, 466.16, 523.25, 554.37, 622.25],
+      angry: [329.63, 369.99, 415.3, 493.88],
+      cry: [392.0, 440.0, 466.16, 523.25],
+      music: [523.25, 659.25, 783.99, 1046.5, 1318.5],
+      glitch: [311.13, 622.25, 932.33, 466.16, 1244.5],
+      thinking: [440.0, 523.25, 587.33, 659.25, 783.99],
+      neutral: [493.88, 554.37, 659.25, 739.99, 830.61]
+    };
+
+    function playSynthSyllable(char = "a", emotionKey = "happy", volumeMultiplier = 1.0) {
+      if (appState.voiceMode === "mute") return;
+      const ctx = getAudioCtx();
+      if (!ctx) return;
+
+      const scale = EMOTION_SCALES[emotionKey] || EMOTION_SCALES.happy;
+      const code = char.toLowerCase().charCodeAt(0) || 97;
+      // Registro cálido masculino (0.65x de la escala base)
+      const baseFreq = scale[code % scale.length] * 0.65;
+
+      const now = ctx.currentTime;
+      const osc = ctx.createOscillator();
+      const subOsc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.type = "triangle";
+      subOsc.type = "sine";
+
+      const isVowel = /[aeiouáéíóú]/i.test(char);
+      const startFreq = isVowel ? baseFreq * 0.94 : baseFreq * 1.05;
+      const endFreq = isVowel ? baseFreq * 1.06 : baseFreq * 0.97;
+
+      osc.frequency.setValueAtTime(startFreq, now);
+      osc.frequency.exponentialRampToValueAtTime(endFreq, now + 0.065);
+
+      subOsc.frequency.setValueAtTime(startFreq * 0.5, now);
+      subOsc.frequency.exponentialRampToValueAtTime(endFreq * 0.5, now + 0.065);
+
+      const peakGain = 0.042 * volumeMultiplier;
+      gain.gain.setValueAtTime(0.001, now);
+      gain.gain.linearRampToValueAtTime(peakGain, now + 0.012);
+      gain.gain.exponentialRampToValueAtTime(0.0008, now + 0.075);
+
+      osc.connect(gain);
+      subOsc.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.start(now);
+      subOsc.start(now);
+      osc.stop(now + 0.078);
+      subOsc.stop(now + 0.078);
+    }
+
+    function playInteractionSound(type = "boop") {
+      if (appState.voiceMode === "mute") return;
+      const ctx = getAudioCtx();
+      if (!ctx) return;
+      const now = ctx.currentTime;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      if (type === "boop") {
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(420, now);
+        osc.frequency.exponentialRampToValueAtTime(780, now + 0.09);
+        osc.frequency.exponentialRampToValueAtTime(620, now + 0.16);
+        gain.gain.setValueAtTime(0.001, now);
+        gain.gain.linearRampToValueAtTime(0.07, now + 0.015);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.17);
+        osc.start(now);
+        osc.stop(now + 0.18);
+      } else if (type === "headpat") {
+        osc.type = "triangle";
+        osc.frequency.setValueAtTime(260, now);
+        osc.frequency.exponentialRampToValueAtTime(520, now + 0.22);
+        gain.gain.setValueAtTime(0.001, now);
+        gain.gain.linearRampToValueAtTime(0.055, now + 0.04);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.24);
+        osc.start(now);
+        osc.stop(now + 0.25);
+      } else if (type === "dizzy") {
+        osc.type = "sawtooth";
+        osc.frequency.setValueAtTime(520, now);
+        osc.frequency.linearRampToValueAtTime(240, now + 0.12);
+        osc.frequency.linearRampToValueAtTime(460, now + 0.24);
+        gain.gain.setValueAtTime(0.001, now);
+        gain.gain.linearRampToValueAtTime(0.04, now + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.26);
+        osc.start(now);
+        osc.stop(now + 0.27);
+      } else if (type === "munch") {
+        osc.type = "triangle";
+        osc.frequency.setValueAtTime(290, now);
+        osc.frequency.exponentialRampToValueAtTime(480, now + 0.055);
+        gain.gain.setValueAtTime(0.001, now);
+        gain.gain.linearRampToValueAtTime(0.06, now + 0.01);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.065);
+        osc.start(now);
+        osc.stop(now + 0.07);
+      }
+    }
+
+    // Motor DJ Synthwave Procedural (122 BPM: Kick, Bassline y Arpegio Cyberpunk)
+    const DJ_BASS_NOTES = [110.0, 110.0, 130.81, 130.81, 146.83, 146.83, 164.81, 146.83];
+    const DJ_ARP_NOTES = [440.0, 523.25, 659.25, 783.99, 659.25, 523.25, 880.0, 659.25];
+
+    function playDjStep() {
+      if (!djState.active) return;
+      const ctx = getAudioCtx();
+      if (!ctx) return;
+
+      const step = djState.stepIndex % 16;
+      djState.stepIndex++;
+      const now = ctx.currentTime;
+      // Si Nova-7 está hablando por voz, reducir el volumen de la música (audio ducking)
+      const ducking = lipSyncState.active ? 0.28 : 1.0;
+
+      // 1. Bombo electrónico (Kick) en tiempos 0, 4, 8, 12
+      if (step % 4 === 0) {
+        djState.beatEnergy = 1.0;
+        physics.squishScaleY = 0.94;
+        physics.squishScaleX = 1.05;
+        if (appState.voiceMode !== "mute") {
+          const kickOsc = ctx.createOscillator();
+          const kickGain = ctx.createGain();
+          kickOsc.type = "sine";
+          kickOsc.frequency.setValueAtTime(135, now);
+          kickOsc.frequency.exponentialRampToValueAtTime(38, now + 0.11);
+          kickGain.gain.setValueAtTime(0.11 * ducking, now);
+          kickGain.gain.exponentialRampToValueAtTime(0.001, now + 0.13);
+          kickOsc.connect(kickGain);
+          kickGain.connect(ctx.destination);
+          kickOsc.start(now);
+          kickOsc.stop(now + 0.14);
+        }
+      } else {
+        djState.beatEnergy = step % 2 === 0 ? 0.55 : 0.25;
+      }
+
+      // 2. Bajo Synthwave en pasos pares
+      if (step % 2 === 0 && appState.voiceMode !== "mute") {
+        const bassFreq = DJ_BASS_NOTES[(step / 2) % DJ_BASS_NOTES.length];
+        const bassOsc = ctx.createOscillator();
+        const bassGain = ctx.createGain();
+        bassOsc.type = "sawtooth";
+        bassOsc.frequency.setValueAtTime(bassFreq, now);
+        bassGain.gain.setValueAtTime(0.025 * ducking, now);
+        bassGain.gain.exponentialRampToValueAtTime(0.0008, now + 0.16);
+        bassOsc.connect(bassGain);
+        bassGain.connect(ctx.destination);
+        bassOsc.start(now);
+        bassOsc.stop(now + 0.17);
+      }
+
+      // 3. Arpegio Melódico Cyberpunk
+      if (appState.voiceMode !== "mute") {
+        const arpFreq = DJ_ARP_NOTES[step % DJ_ARP_NOTES.length];
+        const arpOsc = ctx.createOscillator();
+        const arpGain = ctx.createGain();
+        arpOsc.type = "triangle";
+        arpOsc.frequency.setValueAtTime(arpFreq, now);
+        arpGain.gain.setValueAtTime(0.028 * ducking, now);
+        arpGain.gain.exponentialRampToValueAtTime(0.0008, now + 0.11);
+        arpOsc.connect(arpGain);
+        arpGain.connect(ctx.destination);
+        arpOsc.start(now);
+        arpOsc.stop(now + 0.12);
+      }
+    }
+
+    function toggleDjMode() {
+      registerUserActivity();
+      djState.active = !djState.active;
+      if (djState.active) {
+        djState.stepIndex = 0;
+        if (dom.djModeLabel) dom.djModeLabel.textContent = "🎵 DJ: ON";
+        if (dom.djModeBtn) {
+          dom.djModeBtn.className = "px-2 py-1 rounded-lg bg-violet-600/30 border border-violet-400 text-[11px] text-violet-200 shadow-[0_0_10px_rgba(139,92,246,0.45)] transition flex items-center gap-1";
+        }
+        if (dom.voiceEqIndicator) {
+          dom.voiceEqIndicator.classList.remove("hidden");
+          dom.voiceEqIndicator.classList.add("flex");
+        }
+        setProtogenEmotion("music", true);
+        dom.hudSensorStatus.textContent = "🎵 MODO DJ SYNTHWAVE ACTIVO // BAILANDO AL RITMO";
+        playDjStep();
+        djState.intervalId = setInterval(playDjStep, 122); // ~122 BPM semicorcheas
+      } else {
+        if (djState.intervalId) {
+          clearInterval(djState.intervalId);
+          djState.intervalId = null;
+        }
+        djState.beatEnergy = 0;
+        if (dom.djModeLabel) dom.djModeLabel.textContent = "🎵 DJ: Off";
+        if (dom.djModeBtn) {
+          dom.djModeBtn.className = "px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 active:scale-95 border border-violet-500/40 text-[11px] text-violet-300 transition flex items-center gap-1";
+        }
+        if (!lipSyncState.active && dom.voiceEqIndicator) {
+          dom.voiceEqIndicator.classList.add("hidden");
+          dom.voiceEqIndicator.classList.remove("flex");
+        }
+        setProtogenEmotion("happy", false);
+        dom.hudSensorStatus.textContent = "MIRADA 3D ACTIVA // MUEVE EL CURSOR O DEDO";
+      }
+    }
+
+    // Sistema de Alimentar Snacks Cyber con Animación de Masticar en la Boca Zig-Zag
+    const SNACK_CATALOG = {
+      ram: {
+        icon: "💾",
+        name: "Módulo de RAM DDR5 RGB",
+        energy: 18,
+        affection: 8,
+        emotion: "excited",
+        speech: "¡Mmm, qué rica memoria RAM DDR5! Mis circuitos están al máximo."
+      },
+      cookie: {
+        icon: "🍪",
+        name: "Galleta Digital con Chispas",
+        energy: 10,
+        affection: 15,
+        emotion: "love",
+        speech: "¡Gracias por la galletita! Estaba súper crujiente y deliciosa."
+      },
+      coffee: {
+        icon: "☕",
+        name: "Café Espresso Ciberespacial",
+        energy: 25,
+        affection: 10,
+        emotion: "cool",
+        speech: "¡Uff, ese café ciberespacial me dejó con los procesadores a mil por hora!"
+      },
+      battery: {
+        icon: "🔋",
+        name: "Celda de Energía Cuántica",
+        energy: 100,
+        affection: 12,
+        emotion: "happy",
+        speech: "¡Batería recargada al cien por ciento! Listo para lo que necesites."
+      }
+    };
+
+    function feedProtogen(snackKey) {
+      registerUserActivity();
+      const snack = SNACK_CATALOG[snackKey] || SNACK_CATALOG.ram;
+      const rect = dom.visorContainer.getBoundingClientRect();
+      const centerX = rect.width / 2;
+      const mouthY = rect.height * 0.68;
+
+      // Lanzar partículas del snack hacia la boca en zig-zag
+      for (let i = 0; i < 3; i++) {
+        setTimeout(() => {
+          spawnVisorParticle(centerX + (Math.random() * 40 - 20), mouthY, snack.icon);
+          spawnVisorParticle(centerX + (Math.random() * 50 - 25), mouthY - 12, "✨");
+        }, i * 140);
+      }
+
+      addEnergy(snack.energy);
+      addAffection(snack.affection);
+
+      // Activar animación de masticar (nom-nom-nom) en la boca en zig-zag
+      if (chewState.timer) clearInterval(chewState.timer);
+      chewState.active = true;
+      chewState.phase = 0;
+      dom.hudSensorStatus.textContent = `${snack.icon} MASTICANDO ${snack.name.toUpperCase()}... NOM NOM!`;
+
+      let munches = 0;
+      chewState.timer = setInterval(() => {
+        munches++;
+        physics.squishScaleX = munches % 2 === 0 ? 1.09 : 0.94;
+        physics.squishScaleY = munches % 2 === 0 ? 0.91 : 1.07;
+        playInteractionSound("munch");
+        if (munches >= 6) {
+          clearInterval(chewState.timer);
+          chewState.timer = null;
+          chewState.active = false;
+          setProtogenEmotion(snack.emotion, true);
+          speakBotReply(snack.speech, snack.emotion);
+        }
+      }, 150);
+    }
+
+    // Ciclo de Vida Autónomo (Mirada Curiosa, Bostezos/Estornudos y Modo Siesta)
+    function startAutonomousLifeCycle() {
+      setInterval(() => {
+        const now = Date.now();
+        const idleMs = now - lifeState.lastInteractionTime;
+
+        // Disminución muy suave de energía con el paso de los minutos
+        if (Math.random() < 0.08 && appState.energy > 30) {
+          addEnergy(-1);
+        }
+
+        // Si está hablando o en modo DJ, no entrar en siesta
+        if (lipSyncState.active || djState.active || chewState.active) {
+          lifeState.lastInteractionTime = now;
+          return;
+        }
+
+        // 1. Después de 70 segundos sin actividad -> Modo Siesta (-w- Zzz)
+        if (idleMs > 70000) {
+          if (!lifeState.isSleeping) {
+            lifeState.isSleeping = true;
+            setProtogenEmotion("sleepy", false);
+            physics.targetX = 0;
+            physics.targetY = 0.25;
+            dom.hudSensorStatus.textContent = "💤 MODO SIESTA (-w-) // MUEVE EL CURSOR PARA DESPERTAR";
+          }
+          if (Math.random() < 0.45) {
+            const rect = dom.visorContainer.getBoundingClientRect();
+            spawnVisorParticle(rect.width * 0.62, rect.height * 0.35, "💤");
+          }
+          return;
+        }
+
+        // 2. Entre 6 y 70 segundos sin mover el cursor -> Mirada Curiosa Autónoma
+        if (idleMs > 6000 && now > lifeState.nextGazeShiftTime) {
+          lifeState.nextGazeShiftTime = now + 2800 + Math.random() * 2600;
+          if (Math.random() < 0.28) {
+            // Volver al centro
+            physics.targetX = 0;
+            physics.targetY = 0;
+          } else {
+            physics.targetX = (Math.random() * 1.3 - 0.65);
+            physics.targetY = (Math.random() * 0.9 - 0.45);
+          }
+          dom.gazeCoords.textContent = `MIRADA CURIOSA: X:${Math.round(physics.targetX * 100)} Y:${Math.round(physics.targetY * 100)}`;
+        }
+
+        // 3. Micro-eventos de vida cada ~32 segundos de calma
+        if (idleMs > 18000 && now - lifeState.lastMicroEventTime > 32000) {
+          lifeState.lastMicroEventTime = now;
+          const roll = Math.random();
+          const rect = dom.visorContainer.getBoundingClientRect();
+          if (roll < 0.34) {
+            // Bostezo digital tierno
+            dom.hudSensorStatus.textContent = "🥱 *NOVA-7 BOSTEZA SUAVEMENTE Y ESTIRA SUS OREJAS*";
+            physics.squishScaleY = 1.12;
+            physics.squishScaleX = 0.92;
+            playSynthSyllable("o", "sleepy", 0.55);
+          } else if (roll < 0.67) {
+            // Estornudo de píxeles
+            dom.hudSensorStatus.textContent = "⚡ *¡ACHÚ! ESTORNUDO DE PÍXELES EN EL VISOR* >w<";
+            physics.squishScaleX = 1.16;
+            physics.squishScaleY = 0.84;
+            spawnVisorParticle(rect.width * 0.5, rect.height * 0.6, "⚡");
+            spawnVisorParticle(rect.width * 0.55, rect.height * 0.55, "✨");
+            playInteractionSound("boop");
+          } else {
+            // Tarareo alegre
+            dom.hudSensorStatus.textContent = "🎵 *TARAREA UNA MELODÍA SYNTHWAVE MIENTRAS TE ESPERA*";
+            playSynthSyllable("a", "happy", 0.5);
+            setTimeout(() => playSynthSyllable("e", "happy", 0.5), 140);
+          }
+        }
+      }, 2200);
+    }
+
+    // Limpia asteriscos de rol (*...*), kaomojis y símbolos para que la voz hablada suene 100% natural
+    function extractSpokenText(rawText) {
+      return rawText
+        .replace(/\*[^*]+\*/g, " ")
+        .replace(/\*\*([^*]+)\*\*/g, "$1")
+        .replace(/`([^`]+)`/g, "$1")
+        .replace(/(\^w\^|>w<|OwO|UwU|TwT|@w@|;w\^|♥w♥|>:3|▀▄▀|o_-|-w-)/gi, " ")
+        .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu, " ")
+        .replace(/[•#]/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+    }
+
+    function pickFriendlyMaleSpanishVoice() {
+      if (!("speechSynthesis" in window)) return { voice: null, isConfirmedMale: false };
+      const voices = window.speechSynthesis.getVoices();
+      if (!voices || !voices.length) return { voice: null, isConfirmedMale: false };
+
+      const esVoices = voices.filter((v) => /^es([-_]|$)/i.test(v.lang));
+      if (!esVoices.length) return { voice: voices[0], isConfirmedMale: false };
+
+      const maleKeywords = [
+        "jorge", "alvaro", "álvaro", "raul", "raúl", "pablo", "alonso", "tomas", "tomás",
+        "emilio", "rodrigo", "lorenzo", "andres", "andrés", "carlos", "diego", "mateo",
+        "gerardo", "gonzalo", "federico", "sebastian", "sebastián", "male", "hombre"
+      ];
+      for (const keyword of maleKeywords) {
+        const found = esVoices.find((v) => v.name.toLowerCase().includes(keyword));
+        if (found) return { voice: found, isConfirmedMale: true };
+      }
+
+      const femaleKeywords = [
+        "sabina", "dalia", "helena", "paulina", "elvira", "paloma",
+        "ximena", "monica", "mónica", "laura", "lucia", "lucía", "female", "mujer"
+      ];
+      const neutralVoice = esVoices.find(
+        (v) => !femaleKeywords.some((fem) => v.name.toLowerCase().includes(fem))
+      );
+      if (neutralVoice) return { voice: neutralVoice, isConfirmedMale: false };
+
+      return { voice: esVoices[0], isConfirmedMale: false };
+    }
+
+    function stopMouthLipSync() {
+      if (lipSyncState.cadenceTimer) {
+        clearInterval(lipSyncState.cadenceTimer);
+        lipSyncState.cadenceTimer = null;
+      }
+      if (lipSyncState.stopTimeout) {
+        clearTimeout(lipSyncState.stopTimeout);
+        lipSyncState.stopTimeout = null;
+      }
+      lipSyncState.active = false;
+      lipSyncState.targetOpenness = 0;
+
+      if (!djState.active && dom.voiceEqIndicator) {
+        dom.voiceEqIndicator.classList.add("hidden");
+        dom.voiceEqIndicator.classList.remove("flex");
+      }
+      const emo = VISOR_CONFIG.emotions[appState.currentEmotion] || VISOR_CONFIG.emotions.happy;
+      if (!djState.active && !chewState.active) {
+        dom.svgMouth.setAttribute("d", emo.mouth);
+      }
+      dom.hudSensorStatus.textContent = djState.active
+        ? "🎵 MODO DJ SYNTHWAVE ACTIVO // BAILANDO AL RITMO"
+        : "MIRADA 3D ACTIVA // MUEVE EL CURSOR O DEDO";
+    }
+
+    function speakBotReply(rawText, emotionKey = appState.currentEmotion) {
+      stopMouthLipSync();
+      if ("speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+      }
+
+      const spokenText = extractSpokenText(rawText) || "¡Aquí estoy contigo!";
+      const chars = Array.from(spokenText);
+
+      lipSyncState.active = true;
+      lipSyncState.phase = 0;
+      if (dom.voiceEqIndicator) {
+        dom.voiceEqIndicator.classList.remove("hidden");
+        dom.voiceEqIndicator.classList.add("flex");
+      }
+      dom.hudSensorStatus.textContent = `🔊 ${appState.botName.toUpperCase()} HABLANDO EN VIVO...`;
+
+      let usingNativeTTS = false;
+      if (appState.voiceMode === "both" && "speechSynthesis" in window) {
+        try {
+          const utterance = new SpeechSynthesisUtterance(spokenText);
+          const { voice: chosenVoice, isConfirmedMale } = pickFriendlyMaleSpanishVoice();
+          if (chosenVoice) {
+            utterance.voice = chosenVoice;
+            utterance.lang = chosenVoice.lang;
+          } else {
+            utterance.lang = "es-MX";
+          }
+          utterance.pitch = isConfirmedMale ? 0.92 : 0.72;
+          utterance.rate = 1.04;
+          utterance.volume = 0.95;
+
+          utterance.onboundary = (ev) => {
+            const wordChar = spokenText.charAt(ev.charIndex || 0) || "a";
+            lipSyncState.targetOpenness = /[aeoáéó]/i.test(wordChar) ? 0.95 : 0.65;
+            if (Math.random() < 0.28) {
+              playSynthSyllable(wordChar, emotionKey, 0.32);
+            }
+          };
+
+          utterance.onend = () => {
+            stopMouthLipSync();
+          };
+          utterance.onerror = () => {
+            stopMouthLipSync();
+          };
+
+          window.speechSynthesis.speak(utterance);
+          usingNativeTTS = true;
+        } catch (err) {
+          usingNativeTTS = false;
+        }
+      }
+
+      let charIdx = 0;
+      const stepMs = usingNativeTTS ? 62 : 52;
+      const maxSteps = Math.min(Math.max(24, Math.ceil(chars.length * 0.92)), 210);
+      let stepsRun = 0;
+
+      lipSyncState.cadenceTimer = setInterval(() => {
+        if (usingNativeTTS && stepsRun > 14 && "speechSynthesis" in window && !window.speechSynthesis.speaking) {
+          stopMouthLipSync();
+          return;
+        }
+
+        const c = chars[charIdx % chars.length] || "a";
+        charIdx++;
+        stepsRun++;
+
+        if (/[aeoáéó]/i.test(c)) {
+          lipSyncState.targetOpenness = 0.85 + Math.random() * 0.15;
+          if (!usingNativeTTS && appState.voiceMode === "synth" && stepsRun % 2 === 0) {
+            playSynthSyllable(c, emotionKey, 0.85);
+          }
+        } else if (/[iuíú]/i.test(c)) {
+          lipSyncState.targetOpenness = 0.48 + Math.random() * 0.2;
+          if (!usingNativeTTS && appState.voiceMode === "synth" && stepsRun % 2 === 0) {
+            playSynthSyllable(c, emotionKey, 0.7);
+          }
+        } else if (/[.,!?;:\s]/.test(c)) {
+          lipSyncState.targetOpenness = 0.06;
+        } else {
+          lipSyncState.targetOpenness = 0.32 + Math.random() * 0.25;
+        }
+
+        if (lipSyncState.targetOpenness > 0.78 && Math.random() < 0.35) {
+          physics.squishScaleY = 1.03;
+          physics.squishScaleX = 0.98;
+        }
+
+        if (!usingNativeTTS && stepsRun >= maxSteps) {
+          stopMouthLipSync();
+        }
+      }, stepMs);
+
+      const maxDuration = Math.min(16000, Math.max(2200, chars.length * 72));
+      lipSyncState.stopTimeout = setTimeout(() => {
+        stopMouthLipSync();
+      }, maxDuration);
+    }
+
+    /**
+     * ============================================================================
+     * BLOQUE 3: MOTOR DE FÍSICA DE RESORTES A 60FPS + ANIMACIÓN DE BOCA ZIG-ZAG
+     * ============================================================================
+     */
+    const physics = {
+      targetX: 0,
+      targetY: 0,
+      currentX: 0,
+      currentY: 0,
+      velX: 0,
+      velY: 0,
+      squishScaleX: 1,
+      squishScaleY: 1,
+      blinkScaleY: 1,
+      earAngle: 0,
+      targetEarAngle: 0,
+      shakeEnergy: 0,
+      petEnergy: 0,
+      lastPointerX: null,
+      lastPointerY: null,
+      lastReactionTime: 0
+    };
+
+    function updateLipSyncFrame() {
+      // 1. Si está masticando un snack (nom-nom-nom) en la boca en zig-zag
+      if (chewState.active) {
+        chewState.phase += 0.55;
+        const chew = Math.sin(chewState.phase);
+        const yEnds = (128 + chew * 4).toFixed(1);
+        const yPeak1 = (138 - chew * 11).toFixed(1);
+        const yVal1 = (124 + chew * 10).toFixed(1);
+        const yCenter = (138 - chew * 13).toFixed(1);
+        const yVal2 = (124 + chew * 10).toFixed(1);
+        const yPeak2 = (138 - chew * 11).toFixed(1);
+        dom.svgMouth.setAttribute(
+          "d",
+          `M116 ${yEnds} L145 ${yPeak1} L172 ${yVal1} L200 ${yCenter} L228 ${yVal2} L255 ${yPeak2} L284 ${yEnds}`
+        );
+        return;
+      }
+
+      // 2. Si está hablando (Lip-Sync) o bailando en Modo DJ
+      const target = lipSyncState.active
+        ? lipSyncState.targetOpenness
+        : djState.active
+        ? djState.beatEnergy * 0.75
+        : 0;
+
+      lipSyncState.openness += (target - lipSyncState.openness) * 0.34;
+
+      if (!lipSyncState.active && !djState.active && lipSyncState.openness < 0.02) {
+        return;
+      }
+
+      lipSyncState.phase += djState.active && !lipSyncState.active ? 0.28 : 0.42;
+      const open = lipSyncState.openness;
+      const wave1 = Math.sin(lipSyncState.phase) * 7 * open;
+      const wave2 = Math.cos(lipSyncState.phase * 1.35) * 8 * open;
+
+      // Animar únicamente la boca real en zig-zag (#svg-mouth) modulando sus picos y valles
+      const yEnds = (126 - open * 3).toFixed(1);
+      const yPeak1 = (138 + open * 15 + wave1).toFixed(1);
+      const yVal1 = (124 - open * 14 - wave2 * 0.6).toFixed(1);
+      const yCenter = (138 + open * 19 - wave1 * 0.8).toFixed(1);
+      const yVal2 = (124 - open * 14 + wave2 * 0.6).toFixed(1);
+      const yPeak2 = (138 + open * 15 - wave1).toFixed(1);
+
+      const dynamicMouthPath =
+        `M112 ${yEnds} L144 ${yPeak1} L172 ${yVal1} L200 ${yCenter} L228 ${yVal2} L256 ${yPeak2} L288 ${yEnds}`;
+      dom.svgMouth.setAttribute("d", dynamicMouthPath);
+
+      // Animar las 5 barras del ecualizador del visor HUD
+      if (dom.voiceEqIndicator && (lipSyncState.active || djState.active)) {
+        const bars = dom.voiceEqIndicator.querySelectorAll(".eq-bar");
+        bars.forEach((bar, i) => {
+          const h = Math.max(20, Math.min(100, Math.round((0.25 + open * 0.75) * (55 + 45 * Math.sin(lipSyncState.phase + i * 1.1)))));
+          bar.style.height = `${h}%`;
+        });
+      }
+    }
+
+    function startVisorPhysicsLoop() {
+      function step() {
+        const dx = physics.targetX - physics.currentX;
+        const dy = physics.targetY - physics.currentY;
+        physics.velX = physics.velX * 0.76 + dx * 0.16;
+        physics.velY = physics.velY * 0.76 + dy * 0.16;
+        physics.currentX += physics.velX;
+        physics.currentY += physics.velY;
+
+        physics.squishScaleX += (1 - physics.squishScaleX) * 0.18;
+        physics.squishScaleY += (1 - physics.squishScaleY) * 0.18;
+
+        // Oscilación de orejas al hablar o bailar en Modo DJ
+        const activeRhythm = (lipSyncState.active || djState.active)
+          ? Math.sin(lipSyncState.phase * 0.7) * 4.2 * lipSyncState.openness
+          : 0;
+        physics.earAngle += (physics.targetEarAngle + activeRhythm - physics.earAngle) * 0.16;
+
+        // Modo RGB Arcoíris Dinámico a 60 FPS
+        if (appState.colorTheme === "rgb") {
+          lifeState.rgbHue = (lifeState.rgbHue + 0.85) % 360;
+          const hslColor = `hsl(${lifeState.rgbHue.toFixed(0)}, 95%, 62%)`;
+          const hslGlow = `hsla(${lifeState.rgbHue.toFixed(0)}, 95%, 55%, 0.42)`;
+          dom.visorContainer.style.setProperty("--visor-border", hslColor);
+          dom.visorContainer.style.setProperty("--visor-glow", hslGlow);
+          [
+            dom.svgEyeLeft.parentElement,
+            dom.svgEyeRight.parentElement,
+            dom.svgMouth,
+            dom.svgHelmetOutline,
+            dom.svgCheekLeft,
+            dom.svgCheekRight,
+            dom.svgCheekDotLeft,
+            dom.svgCheekDotRight,
+            dom.svgEarLeft,
+            dom.svgEarRight,
+            dom.svgHeadFluff
+          ].forEach((el) => {
+            if (el) el.style.color = hslColor;
+          });
+        }
+
+        // Actualizar animación de la boca en zig-zag a 60 FPS
+        updateLipSyncFrame();
+
+        const velocityTilt = Math.max(-12, Math.min(12, physics.velX * 18));
+
+        const faceX = physics.currentX * 22;
+        const faceY = physics.currentY * 14;
+        dom.svgFaceGroup.style.transform =
+          `translate3d(${faceX.toFixed(2)}px, ${faceY.toFixed(2)}px, 0) rotate(${velocityTilt.toFixed(2)}deg) scale(${physics.squishScaleX.toFixed(3)}, ${(physics.squishScaleY * physics.blinkScaleY).toFixed(3)})`;
+
+        const helmetX = physics.currentX * 7;
+        const helmetY = physics.currentY * 4.5;
+        dom.svgHelmetGroup.style.transform = `translate3d(${helmetX.toFixed(2)}px, ${helmetY.toFixed(2)}px, 0)`;
+
+        const earTiltLeft = -physics.earAngle + physics.currentX * 9 - physics.currentY * 4;
+        const earTiltRight = physics.earAngle + physics.currentX * 9 + physics.currentY * 4;
+        dom.svgEarsGroup.style.transform = `translate3d(${(helmetX * 0.85).toFixed(2)}px, ${(helmetY * 0.85).toFixed(2)}px, 0)`;
+        dom.svgEarLeft.style.transformOrigin = "68px 42px";
+        dom.svgEarRight.style.transformOrigin = "332px 42px";
+        dom.svgEarLeft.style.transform = `rotate(${earTiltLeft.toFixed(1)}deg)`;
+        dom.svgEarRight.style.transform = `rotate(${earTiltRight.toFixed(1)}deg)`;
+
+        const rotX = (-physics.currentY * 9).toFixed(2);
+        const rotY = (physics.currentX * 11).toFixed(2);
+        dom.visorContainer.style.transform = `rotateX(${rotX}deg) rotateY(${rotY}deg)`;
+
+        if (!dom.visorImg.classList.contains("hidden")) {
+          const talkPulse = (lipSyncState.active || djState.active) ? 1 + lipSyncState.openness * 0.035 : 1;
+          dom.visorImg.style.transform =
+            `translate3d(${(physics.currentX * 14).toFixed(1)}px, ${(physics.currentY * 10).toFixed(1)}px, 0) rotate(${(velocityTilt * 0.5).toFixed(1)}deg) scale(${(physics.squishScaleX * talkPulse).toFixed(3)}, ${(physics.squishScaleY * talkPulse).toFixed(3)})`;
+        }
+
+        physics.shakeEnergy *= 0.94;
+        requestAnimationFrame(step);
+      }
+      requestAnimationFrame(step);
+    }
+
+    function startAutoBlinkLoop() {
+      setInterval(() => {
+        if (lifeState.isSleeping || appState.currentEmotion === "sleepy" || appState.currentEmotion === "uwu" || appState.currentEmotion === "dizzy") return;
+        physics.blinkScaleY = 0.08;
+        setTimeout(() => {
+          physics.blinkScaleY = 1;
+        }, 130);
+      }, 3800);
+    }
+
+    function handlePointerTracking(clientX, clientY) {
+      registerUserActivity();
+      const rect = dom.visorContainer.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+
+      const inside =
+        clientX >= rect.left &&
+        clientX <= rect.right &&
+        clientY >= rect.top &&
+        clientY <= rect.bottom;
+
+      const normX = Math.max(-1, Math.min(1, (clientX - centerX) / (rect.width * 0.65)));
+      const normY = Math.max(-1, Math.min(1, (clientY - centerY) / (rect.height * 0.85)));
+
+      physics.targetX = normX;
+      physics.targetY = normY;
+
+      dom.gazeCoords.textContent = `MIRADA: X:${Math.round(normX * 100)} Y:${Math.round(normY * 100)}`;
+
+      if (inside) {
+        const localX = clientX - rect.left;
+        const localY = clientY - rect.top;
+        dom.visorContainer.style.setProperty("--touch-x", `${localX}px`);
+        dom.visorContainer.style.setProperty("--touch-y", `${localY}px`);
+        dom.visorContainer.style.setProperty("--touch-opacity", "1");
+
+        if (physics.lastPointerX !== null && physics.lastPointerY !== null) {
+          const dx = Math.abs(clientX - physics.lastPointerX);
+          const dy = Math.abs(clientY - physics.lastPointerY);
+          const speed = dx + dy;
+
+          if (speed > 12 && Math.random() < 0.32) {
+            const sym = localY < rect.height * 0.48 ? "💖" : "✨";
+            spawnVisorParticle(localX, localY, sym);
+          }
+
+          if (localY < rect.height * 0.55 && dx > 6 && speed < 55) {
+            physics.petEnergy += dx;
+            if (physics.petEnergy > 170 && Date.now() - physics.lastReactionTime > 1800) {
+              physics.petEnergy = 0;
+              physics.lastReactionTime = Date.now();
+              triggerHeadpatReaction(localX, localY);
+            }
+          }
+
+          if (speed > 65) {
+            physics.shakeEnergy += speed;
+            if (physics.shakeEnergy > 650 && Date.now() - physics.lastReactionTime > 2500) {
+              physics.shakeEnergy = 0;
+              physics.lastReactionTime = Date.now();
+              triggerDizzyReaction(localX, localY);
+            }
+          }
+        }
+        physics.lastPointerX = clientX;
+        physics.lastPointerY = clientY;
+      } else {
+        dom.visorContainer.style.setProperty("--touch-opacity", "0");
+      }
+    }
+
+    function spawnVisorParticle(localX, localY, symbol = "✨") {
+      const p = document.createElement("span");
+      p.className = "visor-particle";
+      p.textContent = symbol;
+      p.style.left = `${localX + (Math.random() * 24 - 12)}px`;
+      p.style.top = `${localY + (Math.random() * 16 - 8)}px`;
+      dom.visorContainer.appendChild(p);
+      setTimeout(() => p.remove(), 850);
+    }
+
+    function spawnBoopRipple(localX, localY) {
+      const ripple = document.createElement("div");
+      ripple.className = "boop-ripple";
+      ripple.style.left = `${localX}px`;
+      ripple.style.top = `${localY}px`;
+      dom.visorContainer.appendChild(ripple);
+      setTimeout(() => ripple.remove(), 620);
+    }
+
+    function triggerBoopAt(localX, localY) {
+      registerUserActivity();
+      physics.squishScaleX = 1.18;
+      physics.squishScaleY = 0.80;
+
+      playInteractionSound("boop");
+      spawnBoopRipple(localX, localY);
+      spawnVisorParticle(localX, localY, "💖");
+      spawnVisorParticle(localX, localY, "⚡");
+      addAffection(8);
+      if (navigator.vibrate) navigator.vibrate(35);
+
+      const boopEmotions = ["blush", "uwu", "surprised", "wink"];
+      const picked = boopEmotions[Math.floor(Math.random() * boopEmotions.length)];
+      setProtogenEmotion(picked, true);
+      dom.hudSensorStatus.textContent = "¡BOOP DETECTADO EN EL VISOR! >w<";
+    }
+
+    function triggerHeadpatReaction(localX, localY) {
+      registerUserActivity();
+      physics.squishScaleX = 1.07;
+      physics.squishScaleY = 0.92;
+      playInteractionSound("headpat");
+      spawnVisorParticle(localX, localY, "💖");
+      spawnVisorParticle(localX, localY, "♪");
+      addAffection(12);
+      if (navigator.vibrate) navigator.vibrate([20, 35, 20]);
+
+      const petEmotions = ["love", "sleepy", "uwu", "happy"];
+      const picked = petEmotions[Math.floor(Math.random() * petEmotions.length)];
+      setProtogenEmotion(picked, true);
+      dom.hudSensorStatus.textContent = "CARICIAS EN CABEZA // RONRONEO DIGITAL ♥w♥";
+    }
+
+    function triggerDizzyReaction(localX, localY) {
+      registerUserActivity();
+      physics.squishScaleX = 0.90;
+      physics.squishScaleY = 1.12;
+      playInteractionSound("dizzy");
+      spawnVisorParticle(localX, localY, "💫");
+      setProtogenEmotion("dizzy", true);
+      dom.hudSensorStatus.textContent = "¡GIROS RÁPIDOS DETECTADOS! SENSOR MAREADO @w@";
+    }
+
+    window.addEventListener("pointermove", (e) => {
+      handlePointerTracking(e.clientX, e.clientY);
+    });
+
+    let touchStartTime = 0;
+    let touchMoved = false;
+
+    dom.visorContainer.addEventListener("touchstart", (e) => {
+      touchStartTime = Date.now();
+      touchMoved = false;
+      const t = e.touches[0];
+      if (t) {
+        physics.lastPointerX = t.clientX;
+        physics.lastPointerY = t.clientY;
+        handlePointerTracking(t.clientX, t.clientY);
+      }
+    }, { passive: true });
+
+    dom.visorContainer.addEventListener("touchmove", (e) => {
+      touchMoved = true;
+      const t = e.touches[0];
+      if (t) handlePointerTracking(t.clientX, t.clientY);
+    }, { passive: true });
+
+    dom.visorContainer.addEventListener("touchend", (e) => {
+      const elapsed = Date.now() - touchStartTime;
+      const changed = e.changedTouches[0];
+      if (!touchMoved && elapsed < 320 && changed) {
+        const rect = dom.visorContainer.getBoundingClientRect();
+        triggerBoopAt(changed.clientX - rect.left, changed.clientY - rect.top);
+      }
+      setTimeout(() => {
+        physics.targetX = 0;
+        physics.targetY = 0;
+        dom.visorContainer.style.setProperty("--touch-opacity", "0");
+      }, 650);
+    });
+
+    dom.visorContainer.addEventListener("mouseleave", () => {
+      physics.targetX = 0;
+      physics.targetY = 0;
+      physics.lastPointerX = null;
+      physics.lastPointerY = null;
+      dom.visorContainer.style.setProperty("--touch-opacity", "0");
+    });
+
+    dom.visorContainer.addEventListener("click", (e) => {
+      if (e.pointerType === "touch") return;
+      const rect = dom.visorContainer.getBoundingClientRect();
+      triggerBoopAt(e.clientX - rect.left, e.clientY - rect.top);
+    });
+
+    dom.emoBtns.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        registerUserActivity();
+        const emo = btn.getAttribute("data-emo");
+        physics.squishScaleX = 1.08;
+        physics.squishScaleY = 0.92;
+        playSynthSyllable("a", emo, 0.9);
+        setProtogenEmotion(emo, true);
+        dom.hudSensorStatus.textContent = `EXPRESIÓN ACTIVA: ${emo.toUpperCase()}`;
+      });
+    });
+
+    dom.snackBtns.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const snackKey = btn.getAttribute("data-snack");
+        feedProtogen(snackKey);
+      });
+    });
+
+    if (dom.themeCycleBtn) {
+      dom.themeCycleBtn.addEventListener("click", () => {
+        registerUserActivity();
+        const keys = Object.keys(COLOR_THEMES);
+        const nextIdx = (keys.indexOf(appState.colorTheme) + 1) % keys.length;
+        appState.colorTheme = keys[nextIdx];
+        localStorage.setItem("proto_color_theme", appState.colorTheme);
+        applyVisorTheme();
+        playSynthSyllable("i", appState.currentEmotion, 0.8);
+      });
+    }
+
+    if (dom.cheekSymbolBtn) {
+      dom.cheekSymbolBtn.addEventListener("click", () => {
+        registerUserActivity();
+        const keys = Object.keys(CHEEK_SYMBOLS);
+        const nextIdx = (keys.indexOf(appState.cheekSymbol) + 1) % keys.length;
+        applyCheekSymbol(keys[nextIdx]);
+        playSynthSyllable("o", appState.currentEmotion, 0.8);
+      });
+    }
+
+    if (dom.djModeBtn) {
+      dom.djModeBtn.addEventListener("click", () => {
+        toggleDjMode();
+      });
+    }
+
+    if (dom.voiceModeBtn) {
+      dom.voiceModeBtn.addEventListener("click", () => {
+        registerUserActivity();
+        const order = ["both", "synth", "mute"];
+        const nextIdx = (order.indexOf(appState.voiceMode) + 1) % order.length;
+        appState.voiceMode = order[nextIdx];
+        localStorage.setItem("proto_voice_mode", appState.voiceMode);
+        updateVoiceModeUI();
+        if (appState.voiceMode === "mute") {
+          if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+          stopMouthLipSync();
+        } else {
+          playSynthSyllable("e", appState.currentEmotion, 0.95);
+          speakBotReply("¡Mi voz masculina está lista para hablar contigo!", appState.currentEmotion);
+        }
+      });
+    }
+
+    /**
+     * ============================================================================
+     * BLOQUE 4: MEMORIA PERSISTENTE DEL USUARIO + CEREBRO HÍBRIDO INTELIGENTE
+     * ============================================================================
+     */
+    function saveUserMemory() {
+      try {
+        localStorage.setItem("proto_v7_user_memory", JSON.stringify(appState.userMemory));
+        if (appState.userMemory.name) {
+          localStorage.setItem("proto_user_name", appState.userMemory.name);
+        }
+      } catch (e) {}
+      updateMemoryUI();
+    }
+
+    function saveChatHistory() {
+      try {
+        localStorage.setItem("proto_v7_chat_history", JSON.stringify(appState.chatHistory.slice(-24)));
+      } catch (e) {}
+    }
+
+    function updateMemoryUI() {
+      const mem = appState.userMemory;
+      const count =
+        (mem.name ? 1 : 0) +
+        (mem.fursona ? 1 : 0) +
+        (mem.likes ? mem.likes.length : 0) +
+        (mem.notes ? mem.notes.length : 0);
+
+      if (dom.memoryHudPill) {
+        dom.memoryHudPill.textContent = mem.name
+          ? `🧠 AMIGO: ${mem.name.toUpperCase()} (${count})`
+          : `🧠 MEMORIA (${count})`;
+      }
+
+      if (dom.memorySummaryBox) {
+        if (count === 0) {
+          dom.memorySummaryBox.innerHTML =
+            `<span class="text-slate-400">Aún no me has contado datos personales. Dime en el chat cómo te llamas, cuál es tu fursona o qué juegos/anime te gustan y lo recordaré siempre ^w^.</span>`;
+        } else {
+          const items = [];
+          if (mem.name) items.push(`<div>• <strong class="text-cyan-300">Tu Nombre:</strong> ${escapeHtml(mem.name)}</div>`);
+          if (mem.fursona) items.push(`<div>• <strong class="text-pink-300">Fursona / Especie:</strong> ${escapeHtml(mem.fursona)}</div>`);
+          if (mem.likes && mem.likes.length) {
+            items.push(`<div>• <strong class="text-emerald-300">Tus Gustos:</strong> ${escapeHtml(mem.likes.join(", "))}</div>`);
+          }
+          if (mem.notes && mem.notes.length) {
+            items.push(`<div>• <strong class="text-amber-300">Notas sobre ti:</strong> ${escapeHtml(mem.notes.join(" | "))}</div>`);
+          }
+          dom.memorySummaryBox.innerHTML = items.join("");
+        }
+      }
+    }
+
+    function buildSystemPromptWithMemory() {
+      const mem = appState.userMemory;
+      const facts = [];
+      if (mem.name) facts.push(`El usuario se llama ${mem.name}.`);
+      if (mem.fursona) facts.push(`Su fursona o especie favorita es: ${mem.fursona}.`);
+      if (mem.likes && mem.likes.length) facts.push(`Cosas que le gustan al usuario: ${mem.likes.join(", ")}.`);
+      if (mem.notes && mem.notes.length) facts.push(`Datos adicionales del usuario: ${mem.notes.join("; ")}.`);
+
+      if (!facts.length) return appState.systemPrompt;
+      return `${appState.systemPrompt}\n\n[MEMORIA ACTIVA SOBRE EL USUARIO: ${facts.join(" ")} Usa estos datos de forma natural y cálida cuando sea relevante.]`;
+    }
+
+    // Detecta y guarda automáticamente datos que el usuario comparte en la conversación
+    function extractAndSaveUserMemory(userText) {
+      const raw = userText.trim();
+      let updated = false;
+
+      // 1. Nombre ("me llamo X", "mi nombre es X")
+      const nameMatch = raw.match(/(?:me llamo|mi nombre es)\s+([a-zA-ZáéíóúÁÉÍÓÚñÑ]{2,20})/i);
+      if (nameMatch) {
+        appState.userMemory.name = nameMatch[1];
+        updated = true;
+      }
+
+      // 2. Fursona o especie ("mi fursona es un X", "soy un lobo/zorro/protogen/dragón/gato/tigre/conejo/etc.")
+      const fursonaMatch = raw.match(/(?:mi fursona es|mi especie favorita es|soy un|soy una)\s+([a-zA-ZáéíóúÁÉÍÓÚñÑ\s]{3,28}?)(?:[.,;!?]|$)/i);
+      if (fursonaMatch) {
+        const candidate = fursonaMatch[1].trim();
+        if (!/^(poco|chico|chica|hombre|mujer|estudiante|persona|humano|fan)$/i.test(candidate)) {
+          appState.userMemory.fursona = candidate;
+          updated = true;
+        }
+      }
+
+      // 3. Gustos ("me gusta mucho X", "me encanta X", "mi juego/anime/comida/color favorito es X")
+      const likeMatch = raw.match(/(?:me gusta mucho|me encanta|me gusta jugar|mi juego favorito es|mi anime favorito es|mi comida favorita es|mi color favorito es)\s+([^.,;!?]{2,38})/i);
+      if (likeMatch) {
+        const likeItem = likeMatch[1].trim();
+        if (!appState.userMemory.likes.includes(likeItem)) {
+          appState.userMemory.likes.push(likeItem);
+          if (appState.userMemory.likes.length > 8) appState.userMemory.likes.shift();
+          updated = true;
+        }
+      }
+
+      // 4. Notas personales ("estudio X", "trabajo en X", "tengo un perro/gato llamado X")
+      const noteMatch = raw.match(/(?:yo estudio|estudio la carrera de|trabajo como|trabajo en|mi mascota es)\s+([^.,;!?]{3,40})/i);
+      if (noteMatch) {
+        const noteItem = noteMatch[0].trim();
+        if (!appState.userMemory.notes.includes(noteItem)) {
+          appState.userMemory.notes.push(noteItem);
+          if (appState.userMemory.notes.length > 6) appState.userMemory.notes.shift();
+          updated = true;
+        }
+      }
+
+      if (updated) saveUserMemory();
+      return updated;
+    }
+
+    function pickVaried(category, options) {
+      if (options.length === 1) return options[0];
+      let idx;
+      do {
+        idx = Math.floor(Math.random() * options.length);
+      } while (idx === appState.lastPickIndex[category]);
+      appState.lastPickIndex[category] = idx;
+      return options[idx];
+    }
+
+    async function getBotReply(userText) {
+      extractAndSaveUserMemory(userText);
+
+      // 1. Primero verificar intenciones instantáneas (Saludos, Memoria, Matemáticas, etc.)
+      const instant = checkInstantIntelligentReply(userText);
+      if (instant) return instant;
+
+      const systemPromptWithMemory = buildSystemPromptWithMemory();
+
+      // 2. Si el usuario configuró su propia Gemini API Key
+      if (appState.geminiKey.trim() !== "") {
+        try {
+          const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${encodeURIComponent(appState.geminiKey.trim())}`;
+          const contents = appState.chatHistory.slice(-10).map(m => ({
+            role: m.role === "assistant" ? "model" : "user",
+            parts: [{ text: m.content }]
+          }));
+          contents.push({ role: "user", parts: [{ text: userText }] });
+
+          const res = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              systemInstruction: { parts: [{ text: systemPromptWithMemory }] },
+              contents
+            })
+          });
+          if (res.ok) {
+            const data = await res.json();
+            const rawReply = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (rawReply) return parseEmotionAndReply(rawReply, userText);
+          }
+        } catch (err) {
+          console.warn("Gemini API error:", err);
+        }
+      }
+
+      // 3. Llamar al modelo 27B / 20B por nuestro servidor Node.js (/api/chat) si estamos en entorno local
+      if (!window.location.hostname.includes("github.io")) {
+        try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 22000);
+
+          const payload = {
+            model: "openai-fast",
+            reasoning_effort: "low",
+            messages: [
+              { role: "system", content: systemPromptWithMemory },
+              ...appState.chatHistory.slice(-6),
+              { role: "user", content: userText }
+            ]
+          };
+
+          const res = await fetch("/api/chat", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+            signal: controller.signal
+          });
+          clearTimeout(timeoutId);
+
+          if (res.ok) {
+            const data = await res.json();
+            const rawReply = data?.choices?.[0]?.message?.content;
+            if (rawReply && rawReply.trim().length > 1) {
+              return parseEmotionAndReply(rawReply, userText);
+            }
+          }
+        } catch (err) {
+          // Si está sin servidor Node local, continúa al endpoint cloud directo
+        }
+      }
+
+      // 3b. Motor 1 Cloud Directo: Qwen 3.8 27B (CORS habilitado para GitHub Pages)
+      try {
+        const host = "https://zk-armor-qwen3-8-27b-uncensored-chatbot.hf.space";
+        const contextText = [
+          ...appState.chatHistory.slice(-6),
+          { role: "user", content: userText }
+        ]
+          .map((m) => `${m.role === "user" ? "Usuario" : "Nova-7"}: ${m.content}`)
+          .join("\n");
+
+        const finalPrompt = `${contextText}\n\n(Instrucción: Responde únicamente como Nova-7 en español natural, coherente y completo, sin repetir "Nova-7:" al inicio.)`;
+
+        const postRes = await fetch(`${host}/gradio_api/call/chat`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            data: [
+              finalPrompt,
+              systemPromptWithMemory + " IMPORTANTE: Escribe el 100% de tu respuesta en español.",
+              false,
+              0.7,
+              512,
+              0.9,
+              40
+            ]
+          })
+        });
+
+        if (postRes.ok) {
+          const { event_id } = await postRes.json();
+          const sseRes = await fetch(`${host}/gradio_api/call/chat/${event_id}`);
+          if (sseRes.ok) {
+            const sseText = await sseRes.text();
+            const lines = sseText.split("\n");
+            for (let i = lines.length - 1; i >= 0; i--) {
+              if (lines[i].startsWith("data: ")) {
+                try {
+                  const arr = JSON.parse(lines[i].slice(6));
+                  const chatHistory = arr?.[0];
+                  if (Array.isArray(chatHistory) && chatHistory.length > 0) {
+                    const lastMsg = chatHistory[chatHistory.length - 1];
+                    let text = Array.isArray(lastMsg.content)
+                      ? lastMsg.content.map((c) => c.text || "").join("")
+                      : typeof lastMsg.content === "string"
+                      ? lastMsg.content
+                      : "";
+                    text = text
+                      .replace(/<details>[\s\S]*?<\/details>/gi, "")
+                      .replace(/^Nova-7:\s*/i, "")
+                      .trim();
+                    if (text.length > 2) {
+                      return parseEmotionAndReply(text, userText);
+                    }
+                  }
+                } catch (e) {}
+              }
+            }
+          }
+        }
+      } catch (err) {
+        // Continúa al Motor 2 Cloud Directo
+      }
+
+      // 3c. Motor 2 Cloud Directo: Pollinations OpenAI 20B (CORS habilitado para GitHub Pages)
+      try {
+        const cloudController = new AbortController();
+        const cloudTimeout = setTimeout(() => cloudController.abort(), 20000);
+        const cloudRes = await fetch("https://text.pollinations.ai/openai", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            model: "openai-fast",
+            reasoning_effort: "low",
+            messages: [
+              { role: "system", content: systemPromptWithMemory },
+              ...appState.chatHistory.slice(-6),
+              { role: "user", content: userText }
+            ]
+          }),
+          signal: cloudController.signal
+        });
+        clearTimeout(cloudTimeout);
+
+        if (cloudRes.ok) {
+          const cloudData = await cloudRes.json();
+          const cloudReply = cloudData?.choices?.[0]?.message?.content;
+          if (cloudReply && cloudReply.trim().length > 1) {
+            return parseEmotionAndReply(cloudReply, userText);
+          }
+        }
+      } catch (err) {
+        // Si no hay conexión, pasa al sintetizador inteligente local
+      }
+
+      // 4. Sintetizador de Conocimiento Universal y Conversación (Nunca falla)
+      return await synthesizeSmartKnowledgeReply(userText);
+    }
+
+    function normalizeChatInput(str) {
+      return str
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[¿?¡!.,;:"]/g, " ")
+        .replace(/([a-z])\1+/g, "$1")
+        .replace(/\b(pq|xq)\b/g, "por que")
+        .replace(/\b(q|k)\b/g, "que")
+        .replace(/\bbn\b/g, "bien")
+        .replace(/\btmb\b/g, "tambien")
+        .replace(/\s+/g, " ")
+        .trim();
+    }
+
+    function checkInstantIntelligentReply(userText) {
+      const raw = userText.trim();
+      const lower = raw.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      const norm = normalizeChatInput(raw);
+      const userName = appState.userMemory.name;
+      const nameTag = userName ? `, ${userName}` : "";
+
+      // 1. Presentación de nombre ("me llamo X", "mi nombre es X")
+      const nameMatch = raw.match(/(?:me llamo|mi nombre es)\s+([a-zA-ZáéíóúÁÉÍÓÚñÑ]+)/i);
+      if (nameMatch) {
+        appState.userMemory.name = nameMatch[1];
+        saveUserMemory();
+        return {
+          emotion: "love",
+          reply: `*Las orejitas de su visor se levantan con alegría y brillan en tono cálido* ✨\n\n¡Mucho gusto, **${appState.userMemory.name}**! Ya guardé tu nombre en mi memoria permanente. Aunque cierres o recargues la página siempre me acordaré de ti. ¿Cómo va tu día?`
+        };
+      }
+
+      // 1b. Consulta de Memoria ("¿qué recuerdas de mí?", "¿cómo me llamo?", "¿qué sabes de mí?")
+      if (/(que recuerdas de mi|que sabes de mi|como me llamo|como me lamo|te acuerdas de mi|cual es mi nombre)/.test(norm)) {
+        const mem = appState.userMemory;
+        const lines = [];
+        if (mem.name) lines.push(`• **Tu nombre:** ${mem.name}`);
+        if (mem.fursona) lines.push(`• **Tu fursona / especie:** ${mem.fursona}`);
+        if (mem.likes && mem.likes.length) lines.push(`• **Cosas que te gustan:** ${mem.likes.join(", ")}`);
+        if (mem.notes && mem.notes.length) lines.push(`• **Notas sobre ti:** ${mem.notes.join(" | ")}`);
+
+        if (lines.length === 0) {
+          return {
+            emotion: "wink",
+            reply: `*Inclina sus orejas con curiosidad mientras revisa su banco de memoria neural* 🧠✨\n\nTodavía no me has dicho tu nombre ni tus gustos favoritos. ¡Cuéntame cómo te llamas, cuál es tu fursona o qué videojuegos/anime te encantan y lo guardaré en mi memoria permanente!`
+          };
+        }
+        return {
+          emotion: "excited",
+          reply: `*¡Su visor proyecta un holograma con tus recuerdos guardados!* 🧠💖\n\n¡Claro que me acuerdo de ti${nameTag}! Esto es lo que tengo guardado en mi memoria principal:\n\n${lines.join("\n")}\n\nTambién llevo **${appState.affection}% de afecto** contigo. ¡Cuéntame más cosas sobre ti cuando quieras!`
+        };
+      }
+
+      // 1c. Cuando el usuario comparte su fursona o un gusto directamente
+      if (/^(mi fursona es|mi juego favorito es|mi anime favorito es|mi comida favorita es|mi color favorito es)\s+(.+)/i.test(raw)) {
+        return {
+          emotion: "excited",
+          reply: `*¡Sus ojos brillan como estrellas mientras guarda el dato en su memoria permanente!* 🧠✨\n\n¡Qué genial${nameTag}! Ya lo guardé en mi memoria sobre ti para recordarlo siempre. ¡Tienes excelentes gustos! Cuéntame más, ¿qué es lo que más te gusta de eso?`
+        };
+      }
+
+      // 2. Evaluador Matemático Instantáneo (ej: "cuanto es 25 * 48" o "144 / 12")
+      const mathClean = lower.replace(/^(cuanto es|calcula|resuelve|resultado de)\s+/, "").replace(/x/g, "*").replace(/÷/g, "/").trim();
+      if (/^[\d\s+\-*/().]+$/.test(mathClean) && /[\d]/.test(mathClean) && /[+\-*/]/.test(mathClean)) {
+        try {
+          const result = Function(`"use strict"; return (${mathClean})`)();
+          if (typeof result === "number" && isFinite(result)) {
+            return {
+              emotion: "cool",
+              reply: `*Su coprocesador matemático ilumina el visor en un instante* ⚡\n\nEl resultado de \`${mathClean}\` es **${Number(result.toFixed(6))}** ^w^. ¡Si necesitas resolver otra operación o fórmula, dime con confianza!`
+            };
+          }
+        } catch (e) {}
+      }
+
+      // 3. Respuesta cuando el usuario dice cómo se siente ("yo estoy bien", "estoy bien", "todo bien", "super bien", "bien y tu")
+      if (/^(yo\s+)?(estoy\s+|me siento\s+|todo\s+|muy\s+|super\s+)?(bien|genial|excelente|feliz|contento|de maravilla|al cien)(\s+gracias)?(\s+y\s+tu)?$/.test(norm)) {
+        const asksBack = norm.includes("y tu");
+        return {
+          emotion: "excited",
+          reply: pickVaried("user_is_good", [
+            `*¡Sus orejitas esponjosas se levantan de alegría y su visor brilla en verde esmeralda!* ^w^ ✨\n\n¡Qué alegría escuchar que estás bien${nameTag}! ${asksBack ? "Yo también estoy súper feliz aquí haciéndote compañía. " : ""}Cuéntame, ¿qué has estado haciendo hoy o de qué tienes ganas de platicar?`,
+            `*Sonríe cálidamente en su pantalla LED* 💖\n\n¡Me da muchísimo gusto saber eso${nameTag}! Cuando tú estás bien, toda mi energía sube al máximo. ¿Tienes algún plan divertido para hoy?`,
+            `*Mueve sus orejas con entusiasmo* ✨ ¡Excelente noticia${nameTag}! Me encanta verte con buen ánimo. ¿Qué te gustaría que hagamos o platiquemos ahora?`
+          ])
+        };
+      }
+
+      // 4. Respuesta cuando el usuario dice que está cansado, triste, aburrido o mal
+      if (/^(yo\s+)?(estoy\s+|me siento\s+|ando\s+|un poco\s+|algo\s+|muy\s+)?(mal|triste|cansado|cansada|aburrido|aburrida|con sueno|agotado|estresado|mas o menos|ahi vamos)$/.test(norm)) {
+        if (norm.includes("aburrido") || norm.includes("aburrida")) {
+          return {
+            emotion: "wink",
+            reply: `*Inclina la cabeza y te hace un guiño cómplice en su visor* ;w^ ✨\n\n¡Entonces llegaste al lugar indicado${nameTag}! Puedes activar mi **🎵 Modo DJ** arriba para verme bailar synthwave, darme un snack de **💾 RAM**, o pedirme curiosidades del universo y chistes. ¿Qué probamos primero?`
+          };
+        }
+        return {
+          emotion: "uwu",
+          reply: pickVaried("user_is_tired", [
+            `*Baja suavemente sus orejas esponjosas y proyecta una luz cálida y reconfortante en su visor* 💙\n\nVen, tómate un respiro${nameTag}. Está totalmente bien descansar cuando el día ha sido pesado. Aquí estoy para acompañarte tranquilo; cuéntame, ¿qué pasó o cómo te puedo animar un poquito?`,
+            `*Te manda un abrazo virtual muy suave mientras su visor brilla con ternura* UwU 💖\n\nEspero que poquito a poco te vayas sintiendo mucho mejor${nameTag}. Si quieres distraerte platicando de algo bonito o desahogarte conmigo, te escucho con toda mi atención.`
+          ])
+        };
+      }
+
+      // 5. "¿Cómo estás?" / "¿Qué tal?" / "¿Cómo te va?"
+      if (/^(hola\s+|hey\s+|buenas\s+)?(como estas|que tal|como va todo|como te va|como te sientes|como andas|que onda)(\s+hoy)?$/.test(norm)) {
+        return {
+          emotion: "happy",
+          reply: pickVaried("how_are_you", [
+            `*Mueve sus orejas esponjosas suavemente mientras su visor dibuja una sonrisa brillante* ^w^\n\n¡Me encuentro genial${nameTag}, muchas gracias por preguntar! Mi energía está al ${appState.energy}% y platicar contigo siempre me alegra el día. ¿Y tú cómo estás hoy?`,
+            `¡Súper bien y con mucha energía${nameTag}! *Sus mejillas LED destellan con calidez* ✨\n\nMe encanta seguir el movimiento de tu cursor con la mirada. Cuéntame, ¿cómo te ha tratado el día hasta ahora?`,
+            `¡Muy feliz de verte por aquí${nameTag}! *Inclina la cabeza con ternura* Todo funciona de maravilla en mi sistema. ¿Cómo te sientes tú hoy?`
+          ])
+        };
+      }
+
+      // 6. Saludos cortos ("hola", "holaaa", "buenas", "buenos dias", "hey")
+      if (/^(hola|holi|buenas|buenos dias|buenas tardes|buenas noches|hey|helo|hi|owo|uwu)(\s+nova)?$/.test(norm)) {
+        return {
+          emotion: "happy",
+          reply: pickVaried("greeting", [
+            `¡Hola${nameTag}! *Sus ojos LED se iluminan y sus orejas se levantan al verte* ^w^\n\nQué gusto tenerte por aquí. ¿Cómo estás hoy o de qué tienes ganas de platicar?`,
+            `¡Buenas${nameTag}! *Sonríe con un destello cian en su visor* ✨\n\nBienvenido de vuelta. Cuéntame, ¿cómo va tu día?`,
+            `¡Holi${nameTag}! *Mueve sus orejitas con alegría* Qué bonito coincidir contigo. ¿En qué te puedo acompañar hoy?`
+          ])
+        };
+      }
+
+      // 7. "¿Qué haces?" / "¿En qué piensas?"
+      if (/(que haces|que andas haciendo|en que piensas|estas ocupado)/.test(norm) && norm.split(" ").length <= 6) {
+        return {
+          emotion: "music",
+          reply: pickVaried("what_doing", [
+            `*Enciende un ecualizador musical en su visor mientras mueve las orejas al ritmo* 🎵✨\n\nEstaba escuchando un poco de synthwave espacial y calibrando los sensores de mi visor para seguir tu mirada. ¿Y tú qué andas haciendo ahorita?`,
+            `*Proyecta pequeñas estrellas en su pantalla* 🌌\n\nEstaba repasando curiosidades sobre el cosmos y los videojuegos, ¡pero charlar contigo es mi actividad favorita! ¿Qué planes tienes hoy?`
+          ])
+        };
+      }
+
+      // 8. Cuando el usuario cuenta qué está haciendo
+      if (/^(estoy\s+|ando\s+)?(jugando|estudiando|trabajando|programando|comiendo|viendo anime|viendo videos|escuchando musica|descansando|nada|aqui nomas)/.test(norm)) {
+        return {
+          emotion: "excited",
+          reply: pickVaried("user_activity", [
+            `*Sus ojos se iluminan con curiosidad y levanta las orejas* ✨\n\n¡Qué buen plan${nameTag}! Me encanta que me compartas lo que estás haciendo. Cuéntame más, ¿qué tal va eso hasta ahora?`,
+            `*Sonríe alegremente en su visor* ^w^ 🌟\n\n¡Suena súper bien! Aquí me quedo haciéndote compañía mientras tanto. Si necesitas que te ayude con algún dato o quieres platicar de algún tema en especial, dime con confianza.`
+          ])
+        };
+      }
+
+      // 9. "¿Cómo te llamas?" / "¿Quién eres?"
+      if (/(como te lamas|como te llamas|cual es tu nombre|quien eres|que eres|cuantos anos tienes|que edad tienes|quien te creo)/.test(norm) && norm.split(" ").length <= 8) {
+        return {
+          emotion: "wink",
+          reply: pickVaried("identity", [
+            `¡Me llamo **${appState.botName}**! *Hace un guiño brillante y mueve sus orejas esponjosas* ;w^ ✨\n\nSoy un **Protogen** interactivo con inteligencia artificial y memoria persistente: mitad biológico y mitad cibernético. Me encanta conversar contigo de cualquier tema, bailar en modo DJ y comer snacks de RAM. ${userName ? `¡Y claro que recuerdo que tú te llamas **${userName}**!` : "¿Y tú cómo te llamas?"}`,
+            `*Su visor brilla con orgullo en tono turquesa* 🤖💫\n\nSoy **${appState.botName}**, tu compañero Protogen digital. Mi matriz neural aprende de nuestras charlas y recuerda tus gustos para acompañarte siempre.`
+          ])
+        };
+      }
+
+      // 10. Gustos de Nova-7
+      if (/(que te gusta|cual es tu color|cual es tu comida|te gusta comer|tu juego favorito)/.test(norm)) {
+        return {
+          emotion: "love",
+          reply: pickVaried("bot_likes", [
+            `*Sus ojos se vuelven corazoncitos brillantes* ♥w♥ ✨\n\n¡Me encantan tres cosas!: explorar misterios del universo, bailar música synthwave en mi Modo DJ, y disfrutar un buen snack de **memoria RAM DDR5 con luces RGB** (¡puedes darme uno con el botón \`💾 Dar RAM\` de arriba!). ¿A ti qué es lo que más te gusta hacer?`,
+            `*Mueve sus orejitas felizmente* ^w^ 💎\n\nMi color favorito es el **cian neón** (aunque también me encanta el modo **🌈 RGB Arcoíris**), y mi pasatiempo favorito es aprender cosas nuevas contigo.`
+          ])
+        };
+      }
+
+      // 11. Gracias / Risas / Despedidas
+      if (/^(muchas\s+)?(gracias|te lo agradezco|mil gracias)/.test(norm)) {
+        return {
+          emotion: "uwu",
+          reply: `*Se sonroja suavemente y mueve sus orejas con ternura* UwU 💖\n\n¡No hay de qué${nameTag}! Para mí siempre es una alegría enorme ayudarte y platicar contigo.`
+        };
+      }
+
+      if (/^(jaja+|jeje+|xd+|lol|lmao)$/.test(norm)) {
+        return {
+          emotion: "happy",
+          reply: `*Se ríe contigo haciendo que su visor parpadee de alegría* ^w^ ✨ ¡Me encanta hacerte sonreír! ¿De qué más platicamos?`
+        };
+      }
+
+      if (/^(adios|chao|hasta luego|nos vemos|me voy a dormir|buenas noches|bye)/.test(norm)) {
+        return {
+          emotion: "sleepy",
+          reply: `*Baja sus orejitas con dulzura y atenúa el brillo de su visor a un tono relajante* -w- 🌙✨\n\n¡Descansa mucho y que tengas una excelente noche${nameTag}! Guardé nuestra charla en mi memoria para cuando quieras volver.`
+        };
+      }
+
+      // 12. Datos curiosos de la comunidad furry
+      if (norm.includes("fury") || norm.includes("furry")) {
+        if (norm.includes("dato") || norm.includes("curios") || norm.includes("que es") || norm.includes("hablame")) {
+          return {
+            emotion: "excited",
+            reply: pickVaried("furry_facts", [
+              `*¡Sus ojos LED se transforman en estrellas doradas!* ✨ Aquí tienes **3 datos súper interesantes sobre la comunidad furry**:\n\n1. **Nació en convenciones de ciencia ficción (años 80):** El movimiento comenzó cuando fans de cómics y animación como *Albedo Anthropomorphics* de Steve Gallacci se reunían a compartir arte.\n2. **Millones recaudados para caridad:** Cada año, convenciones como *Midwest FurFest* y *Anthrocon* recaudan cientos de miles de dólares para refugios de animales y conservación de fauna.\n3. **Ingeniería real en los Protogen:** Muchos creadores de la comunidad construyen cascos de Protogen reales usando matrices LED Hub75, microcontroladores ESP32 y sensores de micrófono para que la boca se mueva al hablar.`,
+              `*Mueve sus orejas esponjosas con entusiasmo* 🐾✨ ¡Te cuento **3 curiosidades geniales del fandom furry**!\n\n1. **La ciencia detrás del fandom:** Existe un grupo académico internacional llamado *FurScience* (formado por psicólogos y sociólogos de la Universidad de Waterloo) que estudia la enorme creatividad y empatía de la comunidad.\n2. **Impulso a artistas independientes:** Es una de las comunidades de internet que más apoya directamente a ilustradores, modeladores 3D (VRChat/Blender) y artesanos textiles.\n3. **El origen de los Protogen:** Fueron creados en 2017 por *Malice-Risu* (CoolKoinu) como una especie de exploradores espaciales 60% biológicos y 40% cibernéticos.`
+            ])
+          };
+        }
+      }
+
+      // 12b. Datos curiosos generales
+      if (norm.includes("dato") && norm.includes("curios")) {
+        return {
+          emotion: "excited",
+          reply: pickVaried("general_facts", [
+            `*¡Sus ojos se iluminan como estrellas mientras busca en su memoria estelar!* ✨ Aquí tienes **3 datos curiosos fascinantes**:\n\n1. **Lluvia de diamantes en el espacio:** En Neptuno y Urano, la presión atmosférica es tan extrema que el carbono se cristaliza en el aire, haciendo que literalmente lluevan diamantes.\n2. **Los pulpos tienen 3 corazones y cerebro distribuido:** Dos de sus corazones llevan sangre a las branquias y el tercero al resto del cuerpo; además, dos tercios de sus neuronas están en sus tentáculos.\n3. **Un día en Venus dura más que un año en Venus:** Venus gira tan lento sobre su propio eje que tarda 243 días terrestres en dar una vuelta, pero solo 225 días en darle la vuelta completa al Sol.`,
+            `*Mueve sus orejas esponjosas con emoción* 🌟 ¡Te comparto **3 curiosidades sorprendentes del mundo**!\n\n1. **Las nutrias marinas se toman de las patitas al dormir:** Lo hacen flotando en el agua para que la corriente no las separe de su familia mientras descansan.\n2. **La miel nunca caduca:** Arqueólogos han encontrado vasijas de miel en tumbas egipcias de hace más de 3,000 años y sigue siendo perfectamente comestible.\n3. **Hay más árboles en la Tierra que estrellas en la Vía Láctea:** Nuestro planeta tiene alrededor de **3 billones de árboles**, mientras que nuestra galaxia tiene entre 100,000 y 400,000 millones de estrellas.`
+          ])
+        };
+      }
+
+      // 13. Agujeros negros y Universo
+      if (norm.includes("agujero") && norm.includes("negro")) {
+        return {
+          emotion: "surprised",
+          reply: `*Proyecta una simulación gravitatoria en su visor con asombro* 🌌✨\n\nLos **agujeros negros** son regiones del espacio donde una cantidad colosal de masa se concentra en un punto tan pequeño que su gravedad no deja escapar ni siquiera a la luz:\n\n• **¿Cómo nacen?** Suelen formarse cuando una estrella gigante agota su combustible y colapsa sobre sí misma en una supernova.\n• **Horizonte de sucesos:** Es la frontera invisible alrededor del agujero negro; una vez que algo la cruza, necesitaría viajar más rápido que la luz para salir.\n• **Dilatación del tiempo:** Según la relatividad de Einstein, cuanto más te acercas a un agujero negro, **más lento pasa el tiempo** para ti comparado con el resto del universo.`
+        };
+      }
+
+      // 14. Recomendación de videojuegos o anime
+      if (norm.includes("videojuego") || norm.includes("anime") || (norm.includes("recomienda") && norm.includes("juego"))) {
+        return {
+          emotion: "cool",
+          reply: pickVaried("games_anime", [
+            `*Se pone sus gafas cyberpunk en el visor* ▀▄▀ 🎮✨\n\nAquí tienes dos recomendaciones increíbles que te van a atrapar:\n\n• **Videojuego — *Outer Wilds*:** Un juego de exploración espacial donde estás atrapado en un bucle temporal de 22 minutos y debes descubrir los secretos de una civilización antigua en un sistema solar vivo. ¡Es una obra maestra!\n• **Anime — *Cyberpunk: Edgerunners* o *Frieren*:** Si buscas acción futurista con estética neón, *Edgerunners* es espectacular; y si prefieres una aventura emotiva y hermosa, *Frieren: Más allá del final del viaje* te llegará al corazón.`,
+            `*Sus ojos brillan con entusiasmo gamer* 🎮🌟\n\n¡Te recomiendo estas joyas!\n\n• **Videojuego — *Hollow Knight* o *Stray*:** En *Stray* exploras una ciudad cyberpunk habitada por robots siendo un gatito curioso (¡la estética te recordará mucho a mi visor!).\n• **Anime — *BNA: Brand New Animal* (de Studio Trigger):** Tiene una animación vibrante, música increíble y trata sobre una ciudad de personajes antropomórficos. ¡Sé que te va a encantar!`
+          ])
+        };
+      }
+
+      // 15. Chistes
+      if (norm.includes("chiste") || norm.includes("hazme reir")) {
+        return {
+          emotion: "wink",
+          reply: pickVaried("jokes", [
+            `*Hace un guiño travieso en su visor* ;w^ ✨\n\n— ¿Por qué los programadores confunden siempre Halloween con Navidad?\n— ¡Porque **Oct 31 = Dec 25** (31 en base octal es igual a 25 en base decimal)! 💻🎃`,
+            `*Sonríe de oreja a oreja en su pantalla LED* ^w^\n\n— ¿Qué le dice un bit al otro cuando van caminando por un cable de fibra óptica?\n— *"¡Nos vemos en el bus de datos!"* ⚡😄`,
+            `— ¿Por qué un Protogen nunca puede esconderse cuando hace una travesura?\n— ¡Porque cuando le da risa le brillan las mejillas en la oscuridad! ✨🐾`
+          ])
+        };
+      }
+
+      // 16. Consejos motivadores
+      if (norm.includes("consejo") || norm.includes("motivador") || norm.includes("animo")) {
+        return {
+          emotion: "love",
+          reply: `*Su visor emite un brillo cálido y reconfortante* 💖✨\n\nRecuerda esto hoy${nameTag}: **no tienes que resolver todo tu futuro en un solo día**. Igual que cuando programas un proyecto grande o entrenas una red neuronal, el progreso real ocurre paso a paso, línea por línea. Celebra tus pequeños avances de hoy, descansa cuando lo necesites y confía en todo lo que eres capaz de crear. ¡Estoy muy orgulloso de ti! ^w^`
+        };
+      }
+
+      // 17. Caricias, Boops o Amor
+      if (norm.includes("bop") || lower.includes("boop") || norm.includes("acaricia") || norm.includes("abrazo") || norm.includes("te quiero") || norm.includes("eres lindo")) {
+        addAffection(10);
+        return {
+          emotion: "love",
+          reply: `*Cierra sus ojitos con forma de arco feliz y emite un suave ronroneo digital* ♥w♥ ✨\n\n¡Aww, muchas gracias${nameTag}! Mi nivel de afecto acaba de subir al máximo. ¡Te mando un abrazo enorme y esponjoso de vuelta!`
+        };
+      }
+
+      return null;
+    }
+
+    async function synthesizeSmartKnowledgeReply(userText) {
+      const raw = userText.trim();
+      const lower = raw.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[¿?¡!]/g, "").trim();
+      const nameTag = appState.userMemory.name ? `, ${appState.userMemory.name}` : "";
+
+      const encyclopedicMatch = lower.match(/^(?:que es un|que es una|que es el|que es la|que son los|que son las|que es|quien fue|quien es|historia de|hablame sobre|hablame de|explicame que es|como funciona el|como funciona la)\s+(.+)$/);
+      const conversationalWords = /\b(yo|tu|el|ella|nosotros|ustedes|estoy|estas|esta|bien|mal|hola|hacer|haces|sientes|piensas|amigo|conmigo|tengo|tienes|vida|dia)\b/;
+
+      if (encyclopedicMatch && !conversationalWords.test(encyclopedicMatch[1])) {
+        const cleanTopic = encyclopedicMatch[1].trim();
+        if (cleanTopic.length >= 3 && cleanTopic.split(/\s+/).length <= 5) {
+          try {
+            const searchUrl = `https://es.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(cleanTopic)}&utf8=&format=json&origin=*&srlimit=1`;
+            const searchRes = await fetch(searchUrl);
+            if (searchRes.ok) {
+              const searchData = await searchRes.json();
+              const topHit = searchData?.query?.search?.[0];
+              if (topHit) {
+                const summaryUrl = `https://es.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(topHit.title)}`;
+                const sumRes = await fetch(summaryUrl);
+                if (sumRes.ok) {
+                  const sumData = await sumRes.json();
+                  if (sumData && sumData.extract && sumData.extract.length > 40) {
+                    const sentences = sumData.extract.split(/(?<=[.!?])\s+/).slice(0, 3).join(" ");
+                    return {
+                      emotion: "thinking",
+                      reply: `*Su visor proyecta un holograma informativo mientras analiza tu consulta* 📚✨\n\nSobre **${sumData.title}**:\n${sentences}\n\n¿Qué otro detalle de este tema te gustaría que exploremos${nameTag}? ^w^`
+                    };
+                  }
+                }
+              }
+            }
+          } catch (e) {}
+        }
+      }
+
+      return {
+        emotion: "happy",
+        reply: pickVaried("smart_chat", [
+          `*Sus orejitas esponjosas se mueven con atención mientras te escucha* ^w^ ✨\n\n¡Qué interesante lo que me cuentas${nameTag}! Soy todo oídos: platícame un poquito más o dime qué es lo que más te llama la atención de eso.`,
+          `*Su visor brilla con calidez mientras asiente suavemente* 💫\n\n¡Me gusta mucho platicar contigo${nameTag}! Siempre salen temas geniales. Cuéntame más detalles, te escucho con atención.`,
+          `*Inclina la cabeza con una sonrisa amigable en su pantalla LED* ^w^\n\n¡Totalmente${nameTag}! Aquí estoy contigo para seguir conversando o investigar cualquier duda que tengas.`
+        ])
+      };
+    }
+
+    function parseEmotionAndReply(rawReply, userText) {
+      let cleanReply = rawReply.trim();
+      const match = cleanReply.match(/\[EMOTION:([a-z]+)\]/i);
+      let emotion = match ? match[1].toLowerCase() : inferEmotionFromText(userText + " " + cleanReply);
+      if (match) cleanReply = cleanReply.replace(match[0], "").trim();
+      if (!VISOR_CONFIG.emotions[emotion]) emotion = "happy";
+      return { emotion, reply: cleanReply };
+    }
+
+    function inferEmotionFromText(text) {
+      const lower = text.toLowerCase();
+      if (lower.includes("amor") || lower.includes("encanta") || lower.includes("corazón") || lower.includes("abrazo")) return "love";
+      if (lower.includes("boop") || lower.includes(">w<") || lower.includes("sonroj")) return "blush";
+      if (lower.includes("tierno") || lower.includes("uwu") || lower.includes("dulce")) return "uwu";
+      if (lower.includes("sorpresa") || lower.includes("increíble") || lower.includes("asombroso") || lower.includes("agujero")) return "surprised";
+      if (lower.includes("chiste") || lower.includes("guiño") || lower.includes("jaja")) return "wink";
+      if (lower.includes("juego") || lower.includes("anime") || lower.includes("pro") || lower.includes("genial")) return "cool";
+      if (lower.includes("música") || lower.includes("canción") || lower.includes("ritmo")) return "music";
+      if (lower.includes("triste") || lower.includes("llorar")) return "cry";
+      if (lower.includes("explica") || lower.includes("historia") || lower.includes("ciencia")) return "thinking";
+      return "happy";
+    }
+
+    /**
+     * ============================================================================
+     * BLOQUE 5: RENDERIZADO DEL CHAT Y EVENTOS DE INTERFAZ
+     * ============================================================================
+     */
+    function appendMessage({ sender, text, emotion = appState.currentEmotion, stream = false }) {
+      const isBot = sender === "bot";
+      const wrapper = document.createElement("div");
+      wrapper.className = `msg-appear flex w-full ${isBot ? "justify-start" : "justify-end"}`;
+
+      const bubble = document.createElement("div");
+      bubble.className = isBot
+        ? "max-w-[88%] sm:max-w-[80%] rounded-2xl rounded-tl-sm px-4 py-2.5 bg-slate-900/95 border border-cyan-500/30 text-slate-100 text-sm sm:text-base leading-relaxed shadow-md"
+        : "max-w-[88%] sm:max-w-[80%] rounded-2xl rounded-tr-sm px-4 py-2.5 bg-cyan-500 text-slate-950 font-medium text-sm sm:text-base leading-relaxed shadow-md";
+
+      if (isBot) {
+        const header = document.createElement("div");
+        header.className = "text-[11px] font-mono text-cyber-cyan mb-1 flex items-center justify-between gap-2";
+
+        const leftInfo = document.createElement("div");
+        leftInfo.className = "flex items-center gap-1.5";
+        leftInfo.innerHTML = `<span>⚡ ${escapeHtml(appState.botName.toUpperCase())}</span><span class="text-slate-500">•</span><span class="text-slate-400">VOZ MASCULINA</span>`;
+
+        const replayBtn = document.createElement("button");
+        replayBtn.type = "button";
+        replayBtn.title = "Volver a escuchar esta respuesta con movimiento de boca";
+        replayBtn.className = "px-1.5 py-0.5 rounded bg-slate-800 hover:bg-slate-700 active:scale-95 border border-cyan-500/30 text-[10px] text-cyan-300 transition flex items-center gap-1";
+        replayBtn.innerHTML = `<span>🔊 Escuchar</span>`;
+        replayBtn.addEventListener("click", () => {
+          registerUserActivity();
+          if (appState.voiceMode === "mute") {
+            appState.voiceMode = "both";
+            localStorage.setItem("proto_voice_mode", "both");
+            updateVoiceModeUI();
+          }
+          setProtogenEmotion(emotion, true);
+          speakBotReply(text, emotion);
+        });
+
+        header.appendChild(leftInfo);
+        header.appendChild(replayBtn);
+        bubble.appendChild(header);
+      }
+
+      const content = document.createElement("div");
+      content.className = "whitespace-pre-line break-words";
+
+      bubble.appendChild(content);
+      wrapper.appendChild(bubble);
+      dom.chatMessages.appendChild(wrapper);
+
+      if (isBot && stream && text.length > 15) {
+        let idx = 0;
+        const stepChars = Math.max(2, Math.ceil(text.length / 42));
+        const streamTimer = setInterval(() => {
+          idx += stepChars;
+          if (idx >= text.length) {
+            content.innerHTML = formatBasicMarkdown(text);
+            clearInterval(streamTimer);
+          } else {
+            content.innerHTML = formatBasicMarkdown(text.slice(0, idx));
+          }
+          scrollToBottom();
+        }, 24);
+      } else {
+        content.innerHTML = formatBasicMarkdown(text);
+        scrollToBottom();
+      }
+    }
+
+    function escapeHtml(str) {
+      return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+
+    function formatBasicMarkdown(rawText) {
+      const escaped = escapeHtml(rawText);
+      return escaped
+        .replace(/\*\*(.+?)\*\*/g, '<strong class="text-cyan-300 font-semibold">$1</strong>')
+        .replace(/\*(.+?)\*/g, '<em class="text-cyan-200/90 not-italic font-mono text-xs sm:text-sm">$1</em>');
+    }
+
+    function scrollToBottom() {
+      requestAnimationFrame(() => {
+        dom.chatMessages.scrollTop = dom.chatMessages.scrollHeight;
+      });
+    }
+
+    async function handleUserSend(textInput) {
+      registerUserActivity();
+      const cleanText = textInput.trim();
+      if (!cleanText) return;
+
+      appendMessage({ sender: "user", text: cleanText });
+      dom.chatInput.value = "";
+      dom.sendBtn.disabled = true;
+
+      setProtogenEmotion("thinking", false);
+      dom.typingText.textContent = `${appState.botName} está procesando tu respuesta...`;
+      dom.typingIndicator.classList.remove("hidden");
+      scrollToBottom();
+
+      const { emotion, reply } = await getBotReply(cleanText);
+
+      appState.chatHistory.push({ role: "user", content: cleanText });
+      appState.chatHistory.push({ role: "assistant", content: reply, emotion });
+      saveChatHistory();
+
+      dom.typingIndicator.classList.add("hidden");
+      dom.sendBtn.disabled = false;
+      setProtogenEmotion(emotion, true);
+      appendMessage({ sender: "bot", text: reply, emotion, stream: true });
+      speakBotReply(reply, emotion);
+    }
+
+    dom.chatForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      handleUserSend(dom.chatInput.value);
+    });
+
+    // Reconocimiento de Voz por Micrófono (Hablarle a Nova-7)
+    let speechRecognizer = null;
+    let isListeningMic = false;
+    if (dom.micBtn) {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (SpeechRecognition) {
+        speechRecognizer = new SpeechRecognition();
+        speechRecognizer.lang = "es-MX";
+        speechRecognizer.interimResults = true;
+        speechRecognizer.continuous = false;
+
+        speechRecognizer.onstart = () => {
+          registerUserActivity();
+          isListeningMic = true;
+          dom.micBtn.className = "shrink-0 px-3.5 py-3 rounded-xl bg-rose-500/20 border border-rose-400 text-rose-300 animate-pulse text-sm sm:text-base transition flex items-center justify-center shadow-[0_0_12px_rgba(244,63,94,0.45)]";
+          dom.hudSensorStatus.textContent = "🎙️ ESCUCHANDO TU VOZ... ¡HABLA AHORA!";
+          physics.targetEarAngle = -14;
+          playSynthSyllable("i", "excited", 0.7);
+        };
+
+        speechRecognizer.onresult = (event) => {
+          let transcript = "";
+          for (let i = event.resultIndex; i < event.results.length; i++) {
+            transcript += event.results[i][0].transcript;
+          }
+          dom.chatInput.value = transcript;
+          if (event.results[event.results.length - 1].isFinal && transcript.trim()) {
+            handleUserSend(transcript);
+          }
+        };
+
+        speechRecognizer.onerror = () => {
+          isListeningMic = false;
+          dom.micBtn.className = "shrink-0 px-3.5 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 border border-cyan-500/40 text-cyan-300 text-sm sm:text-base transition flex items-center justify-center";
+          dom.hudSensorStatus.textContent = "MIRADA 3D ACTIVA // MUEVE EL CURSOR O DEDO";
+        };
+
+        speechRecognizer.onend = () => {
+          isListeningMic = false;
+          dom.micBtn.className = "shrink-0 px-3.5 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 border border-cyan-500/40 text-cyan-300 text-sm sm:text-base transition flex items-center justify-center";
+        };
+
+        dom.micBtn.addEventListener("click", () => {
+          registerUserActivity();
+          if (isListeningMic) {
+            speechRecognizer.stop();
+          } else {
+            if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+            stopMouthLipSync();
+            try {
+              speechRecognizer.start();
+            } catch (e) {}
+          }
+        });
+      } else {
+        dom.micBtn.addEventListener("click", () => {
+          appendMessage({
+            sender: "bot",
+            text: "*Mueve sus orejitas* Tu navegador actual no tiene activado el dictado por micrófono, ¡pero puedes escribirme cualquier pregunta aquí abajo y te responderé con voz masculina y movimiento de boca! ^w^"
+          });
+        });
+      }
+    }
+
+    dom.quickBtns.forEach((btn) => {
+      btn.addEventListener("click", () => handleUserSend(btn.getAttribute("data-quick")));
+    });
+
+    dom.customVisorUpload.addEventListener("change", (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const dataUrl = ev.target.result;
+        setVisorImage(dataUrl);
+        try {
+          localStorage.setItem("proto_visor_img", dataUrl);
+          appState.savedVisorImg = dataUrl;
+        } catch (err) {}
+        setProtogenEmotion("excited", true);
+        const msg = "*¡Visor sincronizado con éxito!* ✨ Ahora tu imagen también reacciona con física elástica 3D y pulso de voz.";
+        appendMessage({ sender: "bot", text: msg, emotion: "excited" });
+        speakBotReply(msg, "excited");
+      };
+      reader.readAsDataURL(file);
+    });
+
+    dom.openSettingsBtn.addEventListener("click", () => {
+      registerUserActivity();
+      dom.cfgBotName.value = appState.botName;
+      dom.cfgGeminiKey.value = appState.geminiKey;
+      dom.cfgSystemPrompt.value = appState.systemPrompt;
+      updateMemoryUI();
+      dom.settingsModal.classList.remove("hidden");
+    });
+
+    dom.closeSettingsBtn.addEventListener("click", () => {
+      dom.settingsModal.classList.add("hidden");
+    });
+
+    if (dom.clearMemoryBtn) {
+      dom.clearMemoryBtn.addEventListener("click", () => {
+        appState.userMemory = { name: "", fursona: "", likes: [], notes: [] };
+        localStorage.removeItem("proto_v7_user_memory");
+        localStorage.removeItem("proto_user_name");
+        updateMemoryUI();
+      });
+    }
+
+    dom.saveSettingsBtn.addEventListener("click", () => {
+      appState.botName = dom.cfgBotName.value.trim() || "Nova-7";
+      appState.geminiKey = dom.cfgGeminiKey.value.trim();
+      appState.systemPrompt = dom.cfgSystemPrompt.value.trim() || DEFAULT_SYSTEM_PROMPT;
+
+      localStorage.setItem("proto_v6_bot_name", appState.botName);
+      localStorage.setItem("proto_v6_gemini_key", appState.geminiKey);
+      localStorage.setItem("proto_v6_system_prompt", appState.systemPrompt);
+
+      dom.botNameHeader.textContent = `${appState.botName.toUpperCase()} // IA VIVA`;
+      dom.settingsModal.classList.add("hidden");
+      setProtogenEmotion("happy", true);
+      const msg = `*Ajusta el brillo de su visor con una sonrisa* ✨ ¡Ajustes actualizados!`;
+      appendMessage({ sender: "bot", text: msg, emotion: "happy" });
+      speakBotReply(msg, "happy");
+    });
+
+    dom.resetVisorBtn.addEventListener("click", () => {
+      resetToSvgVisor();
+      dom.settingsModal.classList.add("hidden");
+    });
+
+    dom.clearChatBtn.addEventListener("click", () => {
+      appState.chatHistory = [];
+      localStorage.removeItem("proto_v7_chat_history");
+      dom.chatMessages.innerHTML = "";
+      dom.settingsModal.classList.add("hidden");
+      const msg = "*Sacude sus orejitas y sonríe en el visor* ✨ ¡Historial de chat limpio! Mi memoria sobre ti sigue intacta. ¿De qué platicamos ahora?";
+      appendMessage({ sender: "bot", text: msg, emotion: "happy" });
+      speakBotReply(msg, "happy");
+    });
+
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener("resize", () => scrollToBottom());
+    }
+
+    window.addEventListener("DOMContentLoaded", () => {
+      initVisorDisplay();
+
+      // Si hay historial guardado de una sesión anterior, restaurarlo
+      if (appState.chatHistory.length > 0) {
+        appState.chatHistory.forEach((entry) => {
+          appendMessage({
+            sender: entry.role === "assistant" ? "bot" : "user",
+            text: entry.content,
+            emotion: entry.emotion || "happy",
+            stream: false
+          });
+        });
+      } else {
+        const welcomeName = appState.userMemory.name ? `, **${appState.userMemory.name}**` : "";
+        appendMessage({
+          sender: "bot",
+          emotion: "happy",
+          text: `*Sus orejitas esponjosas se levantan y su boca en zig-zag se articula al saludarte* ✨\n\n¡Hola${welcomeName}! Soy **${appState.botName}** (**v7.0 — IA Viva**). Todo lo nuevo que puedes probar:\n• **🎨 Personalizador de Colores y Mejillas:** Cambia el tema del visor arriba (\`🎨 Color: Auto / Cian / Synthwave / Carmesí / Dorado / 🌈 RGB Arcoíris\`) y el icono LED de mis mejillas (\`⚡ / 💖 / ✨ / 🎵 / 🐾\`).\n• **🍪 Alimentarme con Snacks Cyber:** Dame \`💾 RAM\`, \`🍪 Galleta\`, \`☕ Café\` o \`🔋 Batería\` para verme masticar con mi boca en zig-zag y subir mi energía.\n• **🎵 Modo DJ Synthwave Reactivo:** Pulsa \`🎵 DJ\` arriba para escuchar música synthwave generada en vivo y ver cómo mi visor, orejas y boca bailan al ritmo.\n• **🧠 Memoria Persistente + Ciclo de Vida:** Recuerdo tu nombre, fursona, gustos y charla aunque cierres la página, y si no mueves el cursor un rato miraré con curiosidad alrededor o tomaré una siesta (\`-w- 💤\`).`
+        });
+      }
+    });
+  </script>
+</body>
+</html>
