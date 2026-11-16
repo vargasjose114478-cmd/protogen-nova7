@@ -805,16 +805,16 @@ Tienes gustos propios, sentido del humor y opiniones sinceras sobre cualquier te
         if (raw) {
           const parsed = JSON.parse(raw);
           if (Array.isArray(parsed)) {
-            // Filtrar y limpiar automáticamente cualquier mensaje antiguo que haya guardado un <details> roto
+            // Filtrar y limpiar automáticamente cualquier mensaje antiguo roto o genérico
             const cleaned = [];
             for (const item of parsed) {
               if (!item || typeof item.content !== "string") continue;
               if (item.role === "assistant") {
                 const safeText = sanitizeAiResponse(item.content);
-                if (safeText && safeText.length > 2) {
+                const isOldGeneric = safeText.includes("cambia según la perspectiva de cada persona");
+                if (safeText && safeText.length > 2 && !isOldGeneric) {
                   cleaned.push({ ...item, content: safeText });
                 } else if (cleaned.length > 0 && cleaned[cleaned.length - 1].role === "user") {
-                  // Si la respuesta anterior estaba rota, quitar también la pregunta huérfana previa
                   cleaned.pop();
                 }
               } else {
@@ -2240,6 +2240,201 @@ Tienes gustos propios, sentido del humor y opiniones sinceras sobre cualquier te
       return options[idx];
     }
 
+    /**
+     * ============================================================================
+     * MOTOR DE BÚSQUEDA WEB EN TIEMPO REAL (WIKIPEDIA ES + EN + OPINIÓN HUMANA)
+     * ============================================================================
+     */
+    async function translateEnToEs(text) {
+      try {
+        const controller = new AbortController();
+        const tid = setTimeout(() => controller.abort(), 3200);
+        const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=es&dt=t&q=${encodeURIComponent(text)}`;
+        const res = await fetch(url, { signal: controller.signal });
+        clearTimeout(tid);
+        if (!res.ok) return text;
+        const data = await res.json();
+        if (Array.isArray(data?.[0])) {
+          return data[0].map((part) => part[0]).join("");
+        }
+      } catch (e) {}
+      return text;
+    }
+
+    function extractWebSearchQuery(userText) {
+      let clean = userText
+        .trim()
+        .replace(/[¿?¡!.,;:()"']/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+
+      clean = clean.replace(
+        /^(?:oye\s+|hola\s+|dime\s+|cuentame\s+|por favor\s+|nova\s+|tu\s+)?(?:que opinas|que piensas|que sabes|que me dices|que tal|que crees|como ves|conoces|ubicas|has oido|has escuchado|sabes que es|sabes quien es|sabes sobre|hablame|cuentame|explicame|dime que es|dime quien es|que es|quien es|quien fue|cuales son|cual es|como funciona|historia|donde queda|cuando paso|te gusta|te gustan)\s+(?:acerca\s+|algo\s+)?(?:de\s+la|de\s+los|de\s+las|del|de\s+un|de\s+una|de|sobre\s+el|sobre\s+la|sobre\s+los|sobre\s+las|sobre|el|la|los|las|un|una)?\s*/i,
+        ""
+      ).trim();
+
+      clean = clean.replace(/^(?:el|la|los|las|un|una)\s+/i, "").trim();
+
+      // Detectar códigos específicos como IS7 -> IS-7, T34 -> T-34, F22 -> F-22, AK47 -> AK-47
+      const codeMatch = clean.match(/\b([A-Za-z]{1,4})[- ]?(\d{1,4}[A-Za-z]?)\b/);
+      const normalizedCode = codeMatch ? `${codeMatch[1].toUpperCase()}-${codeMatch[2]}` : null;
+      const withHyphen = clean.replace(/\b([A-Za-z]{1,3})(\d{1,4})\b/g, "$1-$2");
+
+      return { rawQuery: clean, hyphenQuery: withHyphen, normalizedCode };
+    }
+
+    async function fetchWikiIntro(lang, title) {
+      try {
+        const controller = new AbortController();
+        const tid = setTimeout(() => controller.abort(), 3800);
+        const apiUrl = `https://${lang}.wikipedia.org/w/api.php?action=query&prop=extracts|description&exintro=1&explaintext=1&redirects=1&titles=${encodeURIComponent(title)}&format=json&origin=*`;
+        const res = await fetch(apiUrl, { signal: controller.signal });
+        clearTimeout(tid);
+        if (!res.ok) return null;
+        const data = await res.json();
+        const pages = data?.query?.pages || {};
+        const page = Object.values(pages)[0];
+        if (!page || page.missing !== undefined || !page.extract) return null;
+
+        // Limpiar pronunciaciones fonéticas y paréntesis vacíos para lectura y voz natural
+        const cleanExtract = page.extract
+          .replace(/\([^)]*pronunciaci[oó]n[^)]*\)/gi, "")
+          .replace(/\(\s*[;,.]?\s*\)/g, "")
+          .replace(/\s+/g, " ")
+          .trim();
+        if (cleanExtract.length < 45) return null;
+
+        const sentences = cleanExtract
+          .split(/(?<=[.!?])\s+/)
+          .filter((s) => s.length > 18)
+          .slice(0, 4)
+          .join(" ");
+
+        return {
+          lang,
+          title: page.title,
+          extract: sentences || cleanExtract.slice(0, 520),
+          description: page.description || ""
+        };
+      } catch (e) {
+        return null;
+      }
+    }
+
+    async function searchWebKnowledge(userText) {
+      const { rawQuery, hyphenQuery, normalizedCode } = extractWebSearchQuery(userText);
+      if (!rawQuery || rawQuery.length < 2) return null;
+
+      // Evitar buscar en Wikipedia si es solo charla personal sin tema externo
+      const conversationalOnly = /^(?:yo|tu|el|ella|nosotros|estoy|estas|bien|mal|hola|gracias|nada|todo|algo|nadie|alguien|como|cuando|donde|por que)\s*$/i;
+      if (!normalizedCode && conversationalOnly.test(rawQuery)) return null;
+
+      // 1. Si hay un código de modelo específico (ej. IS-7, F-22, T-34), buscarlo directo primero
+      if (normalizedCode) {
+        const directEs = await fetchWikiIntro("es", normalizedCode);
+        if (directEs) return directEs;
+      }
+
+      const candidateQueries = [];
+      if (normalizedCode) {
+        const mainNoun = rawQuery.split(/\s+/)[0];
+        candidateQueries.push(normalizedCode);
+        if (mainNoun && mainNoun.toLowerCase() !== normalizedCode.toLowerCase()) {
+          candidateQueries.push(`${mainNoun} ${normalizedCode}`);
+        }
+      }
+      candidateQueries.push(hyphenQuery);
+      if (rawQuery !== hyphenQuery) candidateQueries.push(rawQuery);
+
+      for (const q of [...new Set(candidateQueries)]) {
+        try {
+          const controller = new AbortController();
+          const tid = setTimeout(() => controller.abort(), 3800);
+          const searchUrl = `https://es.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(q)}&utf8=&format=json&origin=*&srlimit=3`;
+          const res = await fetch(searchUrl, { signal: controller.signal });
+          clearTimeout(tid);
+          if (!res.ok) continue;
+          const data = await res.json();
+          const hits = data?.query?.search || [];
+
+          for (const hit of hits) {
+            if (normalizedCode) {
+              const codePlain = normalizedCode.replace("-", "").toLowerCase();
+              const codeDash = normalizedCode.toLowerCase();
+              const combined = `${hit.title} ${hit.snippet}`.toLowerCase();
+              if (!combined.includes(codeDash) && !combined.includes(codePlain)) continue;
+            }
+            const info = await fetchWikiIntro("es", hit.title);
+            if (info) return info;
+          }
+        } catch (e) {}
+      }
+
+      // 2. Respaldo en Wikipedia en inglés con traducción automática si el tema no está en español
+      const enQueries = normalizedCode ? [normalizedCode, hyphenQuery] : [hyphenQuery];
+      for (const eq of [...new Set(enQueries)]) {
+        try {
+          const controller = new AbortController();
+          const tid = setTimeout(() => controller.abort(), 3500);
+          const searchUrl = `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(eq)}&utf8=&format=json&origin=*&srlimit=2`;
+          const res = await fetch(searchUrl, { signal: controller.signal });
+          clearTimeout(tid);
+          if (!res.ok) continue;
+          const data = await res.json();
+          const hit = data?.query?.search?.[0];
+          if (hit) {
+            if (normalizedCode) {
+              const codePlain = normalizedCode.replace("-", "").toLowerCase();
+              const codeDash = normalizedCode.toLowerCase();
+              const combined = `${hit.title} ${hit.snippet}`.toLowerCase();
+              if (!combined.includes(codeDash) && !combined.includes(codePlain)) continue;
+            }
+            const enInfo = await fetchWikiIntro("en", hit.title);
+            if (enInfo) {
+              const translated = await translateEnToEs(enInfo.extract);
+              return {
+                lang: "es",
+                title: enInfo.title,
+                extract: translated,
+                description: ""
+              };
+            }
+          }
+        } catch (e) {}
+      }
+
+      return null;
+    }
+
+    function composeHumanWebResponse(userText, webInfo) {
+      const nameTag = appState.userMemory.name ? `, ${appState.userMemory.name}` : "";
+      const lower = userText.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      const isOpinion = /(que opinas|que piensas|como ves|que te parece|te gusta|que crees)/.test(lower);
+      const isWho = /(quien es|quien fue)/.test(lower);
+
+      if (isOpinion) {
+        return {
+          emotion: "excited",
+          reply: pickVaried("web_opinion", [
+            `*Levanta las orejitas con brillo de entusiasmo en los ojos* ^w^ ✨\n\n¡Uff, qué buen tema sacaste${nameTag}! Si te soy sincero, **${webInfo.title}** me parece súper interesante. Mira, para ponerlo en contexto: ${webInfo.extract}\n\nEn lo personal, me fascina toda la historia y el diseño que tiene detrás; es de esas cosas que te atrapan cuando las analizas a fondo. ¿A ti qué es lo que más te llama la atención de **${webInfo.title}**?`,
+            `*Sonríe con interés y mueve una orejita* ;w^ 🌟\n\n¡Te soy honesto${nameTag}, **${webInfo.title}** tiene una historia genial! Fíjate en esto: ${webInfo.extract}\n\nA mí me parece impresionante por todo lo que representó en su momento. ¿Tú cómo lo conociste o qué opinas de él?`
+          ])
+        };
+      }
+
+      if (isWho) {
+        return {
+          emotion: "thinking",
+          reply: `*Se ilumina su mirada recordando su historia* ✨\n\n¡Claro${nameTag}! Te platico sobre **${webInfo.title}**:\n\n${webInfo.extract}\n\nLa verdad dejó una huella enorme. ¿Qué es lo que más te da curiosidad de su vida o de lo que hizo? ^w^`
+        };
+      }
+
+      return {
+        emotion: "thinking",
+        reply: `*Mueve sus orejitas con interés y sonríe con calidez* ✨\n\n¡Claro${nameTag}! Mira, te cuento sobre **${webInfo.title}**:\n\n${webInfo.extract}\n\n¿Qué te parece? Si quieres que platiquemos de algún detalle en especial sobre esto, tú dime ^w^`
+      };
+    }
+
     async function getBotReply(userText) {
       extractAndSaveUserMemory(userText);
 
@@ -2247,9 +2442,14 @@ Tienes gustos propios, sentido del humor y opiniones sinceras sobre cualquier te
       const instant = checkInstantIntelligentReply(userText);
       if (instant) return instant;
 
-      const systemPromptWithMemory = buildSystemPromptWithMemory();
+      // 2. Investigar el tema en la Web en tiempo real (Wikipedia ES/EN)
+      const webInfo = await searchWebKnowledge(userText);
+      const webContextAddon = webInfo
+        ? `\n\n[INFORMACIÓN REAL DE LA WEB SOBRE "${webInfo.title}": ${webInfo.extract}. Usa estos datos reales para responder con naturalidad, coherencia y dando tu opinión como amigo humano en 1 o 2 párrafos cortos, sin tablas.]`
+        : "";
+      const systemPromptWithMemory = buildSystemPromptWithMemory() + webContextAddon;
 
-      // 2. Si el usuario configuró su propia Gemini API Key
+      // 3. Si el usuario configuró su propia Gemini API Key
       if (appState.geminiKey.trim() !== "") {
         try {
           const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${encodeURIComponent(appState.geminiKey.trim())}`;
@@ -2277,14 +2477,15 @@ Tienes gustos propios, sentido del humor y opiniones sinceras sobre cualquier te
         }
       }
 
-      // 3. Llamar a nuestro servidor Node.js (/api/chat) si estamos en entorno local
+      // 4. Llamar a nuestro servidor Node.js (/api/chat) si estamos en entorno local
       if (!window.location.hostname.includes("github.io")) {
         try {
           const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 22000);
+          const timeoutId = setTimeout(() => controller.abort(), webInfo ? 11000 : 22000);
 
           const payload = {
             model: "openai-fast",
+            max_tokens: 260,
             reasoning_effort: "low",
             messages: [
               { role: "system", content: systemPromptWithMemory },
@@ -2309,19 +2510,21 @@ Tienes gustos propios, sentido del humor y opiniones sinceras sobre cualquier te
             }
           }
         } catch (err) {
-          // Si está sin servidor Node local, continúa al endpoint cloud directo
+          // Si está sin servidor Node local, continúa
         }
       }
 
-      // 3b. Motor 1 Cloud Directo: Pollinations OpenAI 20B (Directo sin bloques <details>, CORS habilitado)
+      // 5. Motor Cloud Directo: Pollinations OpenAI 20B con contexto web real
       try {
         const cloudController = new AbortController();
-        const cloudTimeout = setTimeout(() => cloudController.abort(), 14000);
+        // Si ya tenemos datos web reales (webInfo), esperamos máximo 10s al LLM para no hacer esperar al usuario; si no, damos 26s
+        const cloudTimeout = setTimeout(() => cloudController.abort(), webInfo ? 10000 : 26000);
         const cloudRes = await fetch("https://text.pollinations.ai/openai", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             model: "openai-fast",
+            max_tokens: 260,
             reasoning_effort: "low",
             messages: [
               { role: "system", content: systemPromptWithMemory },
@@ -2341,66 +2544,15 @@ Tienes gustos propios, sentido del humor y opiniones sinceras sobre cualquier te
           }
         }
       } catch (err) {
-        // Continúa al Motor 2 Cloud Directo
+        // Si Pollinations demora o está en cola, respondemos al instante con el conocimiento web verificado
       }
 
-      // 3c. Motor 2 Cloud Directo: Qwen 3.8 27B (1536 tokens + sanitizeAiResponse blindado contra <details open>)
-      try {
-        const host = "https://zk-armor-qwen3-8-27b-uncensored-chatbot.hf.space";
-        const recentTurns = appState.chatHistory.slice(-4);
-        const userMessageWithContext = recentTurns.length > 0
-          ? `${recentTurns.map((m) => `${m.role === "user" ? "Amigo" : "Nova-7"}: ${m.content}`).join("\n")}\nAmigo: ${userText}`
-          : userText;
-
-        const postRes = await fetch(`${host}/gradio_api/call/chat`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            data: [
-              userMessageWithContext,
-              systemPromptWithMemory,
-              false,
-              0.72,
-              1536,
-              0.9,
-              40
-            ]
-          })
-        });
-
-        if (postRes.ok) {
-          const { event_id } = await postRes.json();
-          const sseRes = await fetch(`${host}/gradio_api/call/chat/${event_id}`);
-          if (sseRes.ok) {
-            const sseText = await sseRes.text();
-            const lines = sseText.split("\n");
-            for (let i = lines.length - 1; i >= 0; i--) {
-              if (lines[i].startsWith("data: ")) {
-                try {
-                  const arr = JSON.parse(lines[i].slice(6));
-                  const chatHistory = arr?.[0];
-                  if (Array.isArray(chatHistory) && chatHistory.length > 0) {
-                    const lastMsg = chatHistory[chatHistory.length - 1];
-                    const rawContent = Array.isArray(lastMsg.content)
-                      ? lastMsg.content.map((c) => c.text || "").join("")
-                      : typeof lastMsg.content === "string"
-                      ? lastMsg.content
-                      : "";
-                    const cleanText = sanitizeAiResponse(rawContent);
-                    if (cleanText && cleanText.length > 2) {
-                      return parseEmotionAndReply(cleanText, userText);
-                    }
-                  }
-                } catch (e) {}
-              }
-            }
-          }
-        }
-      } catch (err) {
-        // Si no hay conexión, pasa al sintetizador conversacional humano
+      // 6. Si encontramos información real en la Web, construir respuesta humana y con opinión propia
+      if (webInfo) {
+        return composeHumanWebResponse(userText, webInfo);
       }
 
-      // 4. Sintetizador Conversacional Humano y de Conocimiento Universal (Nunca falla)
+      // 7. Sintetizador Conversacional Humano (Nunca falla)
       return await synthesizeSmartKnowledgeReply(userText);
     }
 
