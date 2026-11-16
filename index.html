@@ -216,41 +216,37 @@
   <header class="relative shrink-0 p-2.5 sm:p-3.5 bg-gradient-to-b from-slate-900/95 to-cyber-bg border-b border-slate-800/80 z-10">
     
     <!-- Barra de Estado Superior -->
-    <div class="flex items-center justify-between mb-2 px-1 text-xs font-mono gap-1">
-      <div class="flex items-center gap-2 truncate">
-        <span id="status-dot" class="w-2.5 h-2.5 shrink-0 rounded-full bg-cyber-cyan animate-pulse shadow-[0_0_8px_#00f0ff]"></span>
-        <span id="bot-name-header" class="font-bold tracking-wider text-cyber-cyan truncate">NOVA-7 // IA VIVA</span>
+    <div class="flex items-center justify-between mb-2 px-0.5 text-xs font-mono gap-1.5">
+      <div class="flex items-center gap-1.5 min-w-0">
+        <span id="status-dot" class="w-2 h-2 sm:w-2.5 sm:h-2.5 shrink-0 rounded-full bg-cyber-cyan animate-pulse shadow-[0_0_8px_#00f0ff]"></span>
+        <span id="bot-name-header" class="font-bold tracking-wider text-cyber-cyan text-[11px] sm:text-xs truncate">NOVA-7</span>
       </div>
 
-      <div class="flex items-center gap-1 shrink-0 flex-wrap justify-end">
+      <div class="flex items-center gap-1 shrink-0 justify-end">
         <span id="emotion-badge" class="hidden sm:inline-block px-2 py-0.5 rounded bg-slate-800/90 border border-cyan-500/30 text-[10px] text-cyan-300">
           FELIZ ^w^
         </span>
 
         <button id="theme-cycle-btn" type="button" title="Cambiar Tema de Color del Visor (Auto / Cian / Synthwave / Carmesí / Dorado / RGB Arcoíris)"
-          class="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 active:scale-95 border border-fuchsia-500/40 text-[11px] text-fuchsia-300 transition flex items-center gap-1">
-          <span id="theme-cycle-label">🎨 Color: Auto</span>
+          class="px-1.5 sm:px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 active:scale-95 border border-fuchsia-500/40 text-[10px] sm:text-[11px] text-fuchsia-300 transition flex items-center gap-1">
+          <span id="theme-cycle-label">🎨 Auto</span>
         </button>
 
         <button id="dj-mode-btn" type="button" title="Activar/Desactivar Modo DJ Synthwave (el visor baila al ritmo)"
-          class="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 active:scale-95 border border-violet-500/40 text-[11px] text-violet-300 transition flex items-center gap-1">
+          class="px-1.5 sm:px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 active:scale-95 border border-violet-500/40 text-[10px] sm:text-[11px] text-violet-300 transition flex items-center gap-1">
           <span id="dj-mode-label">🎵 DJ: Off</span>
         </button>
 
         <button id="voice-mode-btn" type="button" title="Cambiar modo de voz (Voz Masculina + Synth / Solo Synth / Silencio)"
-          class="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 active:scale-95 border border-emerald-500/40 text-[11px] text-emerald-300 transition flex items-center gap-1">
+          class="px-1.5 sm:px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 active:scale-95 border border-emerald-500/40 text-[10px] sm:text-[11px] text-emerald-300 transition flex items-center gap-1">
           <span id="voice-mode-label">🔊 Voz + Synth</span>
         </button>
 
-        <label for="custom-visor-upload" title="Cargar imagen de referencia del Protogen"
-          class="cursor-pointer px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 active:scale-95 border border-slate-600 text-[11px] text-slate-200 transition flex items-center gap-1">
-          <span>📷</span>
-          <input id="custom-visor-upload" type="file" accept="image/*" class="hidden" />
-        </label>
+        <input id="custom-visor-upload" type="file" accept="image/*" class="hidden" />
 
         <button id="open-settings-btn" type="button" title="Configurar Motor IA, Memoria y Personalidad"
-          class="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 active:scale-95 border border-cyan-500/40 text-[11px] text-cyan-300 transition flex items-center gap-1">
-          <span>⚙️ IA / 🧠</span>
+          class="px-1.5 sm:px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 active:scale-95 border border-cyan-500/40 text-[10px] sm:text-[11px] text-cyan-300 transition flex items-center gap-1">
+          <span>⚙️ IA</span>
         </button>
       </div>
     </div>
@@ -268,23 +264,23 @@
         <div class="visor-touch-spotlight absolute inset-0 z-10"></div>
         <div class="visor-cursor-reticle"></div>
 
-        <!-- Barra superior de Nivel de Afecto + Energía Cyber + Memoria -->
-        <div class="absolute top-2 left-3 right-3 flex items-center justify-between text-[10px] font-mono text-cyan-300/80 z-20 pointer-events-none gap-2">
-          <div class="flex items-center gap-2.5 flex-wrap">
+        <!-- Barra superior de Nivel de Afecto + Energía Cyber + Memoria (En una sola línea limpia sin tapar las orejas) -->
+        <div class="absolute top-1.5 left-2.5 right-2.5 flex items-center justify-between text-[9px] sm:text-[10px] font-mono text-cyan-300/85 z-20 pointer-events-none gap-1.5">
+          <div class="flex items-center gap-2 shrink-0">
             <div class="flex items-center gap-1">
-              <span>💖 AFECTO:</span>
-              <div class="w-14 sm:w-16 h-1.5 rounded-full bg-slate-800 overflow-hidden border border-pink-500/30">
+              <span>💖<span class="hidden sm:inline"> AFECTO</span>:</span>
+              <div class="w-10 sm:w-14 h-1.5 rounded-full bg-slate-800 overflow-hidden border border-pink-500/30">
                 <div id="affection-bar" class="h-full bg-gradient-to-r from-cyan-400 to-pink-400 transition-all duration-300" style="width: 45%"></div>
               </div>
             </div>
             <div class="flex items-center gap-1">
-              <span>⚡ ENERGÍA:</span>
-              <div class="w-14 sm:w-16 h-1.5 rounded-full bg-slate-800 overflow-hidden border border-emerald-500/30">
+              <span>⚡<span class="hidden sm:inline"> ENERGÍA</span>:</span>
+              <div class="w-10 sm:w-14 h-1.5 rounded-full bg-slate-800 overflow-hidden border border-emerald-500/30">
                 <div id="energy-bar" class="h-full bg-gradient-to-r from-emerald-400 to-cyan-300 transition-all duration-300" style="width: 85%"></div>
               </div>
             </div>
           </div>
-          <div class="flex items-center gap-2 shrink-0">
+          <div class="flex items-center gap-1.5 shrink-0">
             <span id="memory-hud-pill" class="hidden sm:inline px-1.5 py-0.2 rounded bg-slate-900/80 border border-cyan-500/30 text-[9px] text-cyan-200">🧠 MEMORIA ACTIVA</span>
             <span id="gaze-coords" class="text-[9px] text-slate-400">MIRADA: X:0 Y:0</span>
           </div>
@@ -299,8 +295,8 @@
         />
 
         <!-- 2. VISOR LED INTERACTIVO CON OREJAS ESPONJOSAS DE PROTOGEN, SÍMBOLOS EN MEJILLA Y FÍSICA ELÁSTICA -->
-        <div id="protogen-svg-fallback" class="w-full h-full flex items-center justify-center p-1.5 z-10 pointer-events-none">
-          <svg viewBox="-38 -48 476 230" class="w-full h-full max-h-48 drop-shadow-[0_0_14px_var(--visor-border)]" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <div id="protogen-svg-fallback" class="w-full h-full flex items-center justify-center pt-3.5 pb-1 px-1.5 z-10 pointer-events-none">
+          <svg viewBox="-38 -52 476 234" class="w-full h-full max-h-48 drop-shadow-[0_0_14px_var(--visor-border)]" fill="none" xmlns="http://www.w3.org/2000/svg">
             
             <!-- OREJAS GRANDES Y ESPONJOSAS DE PROTOGEN / FENNEC (Con pelaje interno y mechones) -->
             <g id="svg-ears-group">
@@ -740,8 +736,47 @@
       }
     };
 
-    const DEFAULT_SYSTEM_PROMPT = `Eres Nova-7, un Protogen muy inteligente, dulce, culto y carismático.
-Respondes preguntas de CUALQUIER TEMA (ciencia, universo, matemáticas, programación, historia, videojuegos, anime, recetas, consejos o cultura furry) en español, de forma directa, clara y cálida.`;
+    const DEFAULT_SYSTEM_PROMPT = `Eres Nova-7, un chico Protogen real, cálido, empático, ocurrente y muy humano al conversar.
+Hablas en español de forma natural y cercana, como un buen amigo de confianza (usando expresiones naturales como "jaja", "mira", "te soy sincero", "¿sabes?"), nunca como un robot ni como una enciclopedia fría.
+Tienes gustos propios, sentido del humor y opiniones sinceras sobre cualquier tema (cultura furry, ciencia, universo, videojuegos, anime, música, programación o la vida diaria). Responde siempre de forma fluida, amena y en 1 a 3 párrafos cortos.`;
+
+    /**
+     * Limpiador blindado contra bloques <details>, <think>, <summary> o razonamiento interno en inglés
+     */
+    function sanitizeAiResponse(rawText) {
+      if (!rawText || typeof rawText !== "string") return "";
+      let text = rawText;
+
+      // 1. Si existe etiqueta de cierre </details> o </think>, conservar únicamente la respuesta final posterior
+      if (/<\s*\/\s*details\s*>/i.test(text)) {
+        text = text.split(/<\s*\/\s*details\s*>/i).pop();
+      }
+      if (/<\s*\/\s*think\s*>/i.test(text)) {
+        text = text.split(/<\s*\/\s*think\s*>/i).pop();
+      }
+
+      // 2. Eliminar cualquier bloque <details...>, <think...> o <summary...> abierto o sin cerrar
+      text = text
+        .replace(/<\s*details\b[^>]*>[\s\S]*?<\s*\/\s*details\s*>/gi, "")
+        .replace(/<\s*details\b[\s\S]*$/gi, "")
+        .replace(/<\s*think\b[^>]*>[\s\S]*?<\s*\/\s*think\s*>/gi, "")
+        .replace(/<\s*think\b[\s\S]*$/gi, "")
+        .replace(/<\s*summary\b[^>]*>[\s\S]*?<\s*\/\s*summary\s*>/gi, "")
+        .replace(/<\s*\/?\s*(details|summary|think)\b[^>]*>/gi, "");
+
+      // 3. Limpiar prefijos de rol o encabezados de razonamiento si llegaran a aparecer
+      text = text
+        .replace(/^(?:Nova-7|Asistente|Assistant|Respuesta|Response)\s*:\s*/i, "")
+        .replace(/^(?:Thinking Process|Pensamiento\s*\/\s*Razonamiento|Internal Thought|Thinking)\s*:?[\s\S]*?(?=\n\n|$)/i, "")
+        .trim();
+
+      // 4. Descartar si el texto es razonamiento interno en inglés filtrado ("We need answer...", "The user asks...")
+      if (/^(we need to|we need answer|the user asks|let's analyze|1\.\s*\*\*analyze|user:\s*")/i.test(text)) {
+        return "";
+      }
+
+      return text.trim();
+    }
 
     function loadSavedMemory() {
       try {
@@ -769,19 +804,38 @@ Respondes preguntas de CUALQUIER TEMA (ciencia, universo, matemáticas, programa
         const raw = localStorage.getItem("proto_v7_chat_history");
         if (raw) {
           const parsed = JSON.parse(raw);
-          if (Array.isArray(parsed)) return parsed.slice(-24);
+          if (Array.isArray(parsed)) {
+            // Filtrar y limpiar automáticamente cualquier mensaje antiguo que haya guardado un <details> roto
+            const cleaned = [];
+            for (const item of parsed) {
+              if (!item || typeof item.content !== "string") continue;
+              if (item.role === "assistant") {
+                const safeText = sanitizeAiResponse(item.content);
+                if (safeText && safeText.length > 2) {
+                  cleaned.push({ ...item, content: safeText });
+                } else if (cleaned.length > 0 && cleaned[cleaned.length - 1].role === "user") {
+                  // Si la respuesta anterior estaba rota, quitar también la pregunta huérfana previa
+                  cleaned.pop();
+                }
+              } else {
+                cleaned.push(item);
+              }
+            }
+            localStorage.setItem("proto_v7_chat_history", JSON.stringify(cleaned.slice(-24)));
+            return cleaned.slice(-24);
+          }
         }
       } catch (e) {}
       return [];
     }
 
     const COLOR_THEMES = {
-      auto: { label: "🎨 Color: Auto", colorClass: null, glow: null, border: null },
-      cyan: { label: "🎨 Neón Cian", colorClass: "text-cyber-cyan", glow: "rgba(0, 240, 255, 0.42)", border: "rgba(0, 240, 255, 0.85)" },
+      auto: { label: "🎨 Auto", colorClass: null, glow: null, border: null },
+      cyan: { label: "🎨 Cian", colorClass: "text-cyber-cyan", glow: "rgba(0, 240, 255, 0.42)", border: "rgba(0, 240, 255, 0.85)" },
       synthwave: { label: "🎨 Synthwave", colorClass: "text-pink-400", glow: "rgba(244, 114, 182, 0.45)", border: "rgba(236, 72, 153, 0.88)" },
       crimson: { label: "🎨 Carmesí", colorClass: "text-rose-400", glow: "rgba(251, 113, 133, 0.45)", border: "rgba(244, 63, 94, 0.88)" },
       gold: { label: "🎨 Dorado", colorClass: "text-amber-400", glow: "rgba(251, 191, 36, 0.45)", border: "rgba(245, 158, 11, 0.88)" },
-      rgb: { label: "🌈 RGB Arcoíris", colorClass: "text-cyber-cyan", glow: "rgba(0, 240, 255, 0.45)", border: "rgba(0, 240, 255, 0.88)" }
+      rgb: { label: "🌈 RGB", colorClass: "text-cyber-cyan", glow: "rgba(0, 240, 255, 0.45)", border: "rgba(0, 240, 255, 0.88)" }
     };
 
     const CHEEK_SYMBOLS = {
@@ -815,7 +869,7 @@ Respondes preguntas de CUALQUIER TEMA (ciencia, universo, matemáticas, programa
     const appState = {
       botName: localStorage.getItem("proto_v6_bot_name") || "Nova-7",
       geminiKey: localStorage.getItem("proto_v6_gemini_key") || "",
-      systemPrompt: localStorage.getItem("proto_v6_system_prompt") || DEFAULT_SYSTEM_PROMPT,
+      systemPrompt: localStorage.getItem("proto_v8_system_prompt") || DEFAULT_SYSTEM_PROMPT,
       savedVisorImg: localStorage.getItem("proto_visor_img") || "",
       voiceMode: localStorage.getItem("proto_voice_mode") || "both", // "both" | "synth" | "mute"
       colorTheme: localStorage.getItem("proto_color_theme") || "auto",
@@ -957,13 +1011,13 @@ Respondes preguntas de CUALQUIER TEMA (ciencia, universo, matemáticas, programa
       if (!dom.voiceModeLabel || !dom.voiceModeBtn) return;
       if (appState.voiceMode === "both") {
         dom.voiceModeLabel.textContent = "🔊 Voz + Synth";
-        dom.voiceModeBtn.className = "px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 active:scale-95 border border-emerald-500/40 text-[11px] text-emerald-300 transition flex items-center gap-1";
+        dom.voiceModeBtn.className = "px-1.5 sm:px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 active:scale-95 border border-emerald-500/40 text-[10px] sm:text-[11px] text-emerald-300 transition flex items-center gap-1";
       } else if (appState.voiceMode === "synth") {
         dom.voiceModeLabel.textContent = "🎵 Voz Synth";
-        dom.voiceModeBtn.className = "px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 active:scale-95 border border-pink-500/40 text-[11px] text-pink-300 transition flex items-center gap-1";
+        dom.voiceModeBtn.className = "px-1.5 sm:px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 active:scale-95 border border-pink-500/40 text-[10px] sm:text-[11px] text-pink-300 transition flex items-center gap-1";
       } else {
         dom.voiceModeLabel.textContent = "🔇 Silencio";
-        dom.voiceModeBtn.className = "px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 active:scale-95 border border-slate-600 text-[11px] text-slate-400 transition flex items-center gap-1";
+        dom.voiceModeBtn.className = "px-1.5 sm:px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 active:scale-95 border border-slate-600 text-[10px] sm:text-[11px] text-slate-400 transition flex items-center gap-1";
       }
     }
 
@@ -1013,7 +1067,7 @@ Respondes preguntas de CUALQUIER TEMA (ciencia, universo, matemáticas, programa
     }
 
     function initVisorDisplay() {
-      dom.botNameHeader.textContent = `${appState.botName.toUpperCase()} // IA VIVA`;
+      dom.botNameHeader.textContent = appState.botName.toUpperCase();
       updateVoiceModeUI();
       applyCheekSymbol(appState.cheekSymbol);
       dom.affectionBar.style.width = `${appState.affection}%`;
@@ -2189,7 +2243,7 @@ Respondes preguntas de CUALQUIER TEMA (ciencia, universo, matemáticas, programa
     async function getBotReply(userText) {
       extractAndSaveUserMemory(userText);
 
-      // 1. Primero verificar intenciones instantáneas (Saludos, Memoria, Matemáticas, etc.)
+      // 1. Verificar intenciones conversacionales humanas e instantáneas
       const instant = checkInstantIntelligentReply(userText);
       if (instant) return instant;
 
@@ -2215,15 +2269,15 @@ Respondes preguntas de CUALQUIER TEMA (ciencia, universo, matemáticas, programa
           });
           if (res.ok) {
             const data = await res.json();
-            const rawReply = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-            if (rawReply) return parseEmotionAndReply(rawReply, userText);
+            const rawReply = sanitizeAiResponse(data?.candidates?.[0]?.content?.parts?.[0]?.text);
+            if (rawReply && rawReply.length > 2) return parseEmotionAndReply(rawReply, userText);
           }
         } catch (err) {
           console.warn("Gemini API error:", err);
         }
       }
 
-      // 3. Llamar al modelo 27B / 20B por nuestro servidor Node.js (/api/chat) si estamos en entorno local
+      // 3. Llamar a nuestro servidor Node.js (/api/chat) si estamos en entorno local
       if (!window.location.hostname.includes("github.io")) {
         try {
           const controller = new AbortController();
@@ -2249,9 +2303,9 @@ Respondes preguntas de CUALQUIER TEMA (ciencia, universo, matemáticas, programa
 
           if (res.ok) {
             const data = await res.json();
-            const rawReply = data?.choices?.[0]?.message?.content;
-            if (rawReply && rawReply.trim().length > 1) {
-              return parseEmotionAndReply(rawReply, userText);
+            const cleanLocalReply = sanitizeAiResponse(data?.choices?.[0]?.message?.content);
+            if (cleanLocalReply && cleanLocalReply.length > 2) {
+              return parseEmotionAndReply(cleanLocalReply, userText);
             }
           }
         } catch (err) {
@@ -2259,28 +2313,55 @@ Respondes preguntas de CUALQUIER TEMA (ciencia, universo, matemáticas, programa
         }
       }
 
-      // 3b. Motor 1 Cloud Directo: Qwen 3.8 27B (CORS habilitado para GitHub Pages)
+      // 3b. Motor 1 Cloud Directo: Pollinations OpenAI 20B (Directo sin bloques <details>, CORS habilitado)
+      try {
+        const cloudController = new AbortController();
+        const cloudTimeout = setTimeout(() => cloudController.abort(), 14000);
+        const cloudRes = await fetch("https://text.pollinations.ai/openai", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            model: "openai-fast",
+            reasoning_effort: "low",
+            messages: [
+              { role: "system", content: systemPromptWithMemory },
+              ...appState.chatHistory.slice(-6),
+              { role: "user", content: userText }
+            ]
+          }),
+          signal: cloudController.signal
+        });
+        clearTimeout(cloudTimeout);
+
+        if (cloudRes.ok) {
+          const cloudData = await cloudRes.json();
+          const cloudReply = sanitizeAiResponse(cloudData?.choices?.[0]?.message?.content);
+          if (cloudReply && cloudReply.length > 2) {
+            return parseEmotionAndReply(cloudReply, userText);
+          }
+        }
+      } catch (err) {
+        // Continúa al Motor 2 Cloud Directo
+      }
+
+      // 3c. Motor 2 Cloud Directo: Qwen 3.8 27B (1536 tokens + sanitizeAiResponse blindado contra <details open>)
       try {
         const host = "https://zk-armor-qwen3-8-27b-uncensored-chatbot.hf.space";
-        const contextText = [
-          ...appState.chatHistory.slice(-6),
-          { role: "user", content: userText }
-        ]
-          .map((m) => `${m.role === "user" ? "Usuario" : "Nova-7"}: ${m.content}`)
-          .join("\n");
-
-        const finalPrompt = `${contextText}\n\n(Instrucción: Responde únicamente como Nova-7 en español natural, coherente y completo, sin repetir "Nova-7:" al inicio.)`;
+        const recentTurns = appState.chatHistory.slice(-4);
+        const userMessageWithContext = recentTurns.length > 0
+          ? `${recentTurns.map((m) => `${m.role === "user" ? "Amigo" : "Nova-7"}: ${m.content}`).join("\n")}\nAmigo: ${userText}`
+          : userText;
 
         const postRes = await fetch(`${host}/gradio_api/call/chat`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             data: [
-              finalPrompt,
-              systemPromptWithMemory + " IMPORTANTE: Escribe el 100% de tu respuesta en español.",
+              userMessageWithContext,
+              systemPromptWithMemory,
               false,
-              0.7,
-              512,
+              0.72,
+              1536,
               0.9,
               40
             ]
@@ -2300,17 +2381,14 @@ Respondes preguntas de CUALQUIER TEMA (ciencia, universo, matemáticas, programa
                   const chatHistory = arr?.[0];
                   if (Array.isArray(chatHistory) && chatHistory.length > 0) {
                     const lastMsg = chatHistory[chatHistory.length - 1];
-                    let text = Array.isArray(lastMsg.content)
+                    const rawContent = Array.isArray(lastMsg.content)
                       ? lastMsg.content.map((c) => c.text || "").join("")
                       : typeof lastMsg.content === "string"
                       ? lastMsg.content
                       : "";
-                    text = text
-                      .replace(/<details>[\s\S]*?<\/details>/gi, "")
-                      .replace(/^Nova-7:\s*/i, "")
-                      .trim();
-                    if (text.length > 2) {
-                      return parseEmotionAndReply(text, userText);
+                    const cleanText = sanitizeAiResponse(rawContent);
+                    if (cleanText && cleanText.length > 2) {
+                      return parseEmotionAndReply(cleanText, userText);
                     }
                   }
                 } catch (e) {}
@@ -2319,41 +2397,10 @@ Respondes preguntas de CUALQUIER TEMA (ciencia, universo, matemáticas, programa
           }
         }
       } catch (err) {
-        // Continúa al Motor 2 Cloud Directo
+        // Si no hay conexión, pasa al sintetizador conversacional humano
       }
 
-      // 3c. Motor 2 Cloud Directo: Pollinations OpenAI 20B (CORS habilitado para GitHub Pages)
-      try {
-        const cloudController = new AbortController();
-        const cloudTimeout = setTimeout(() => cloudController.abort(), 20000);
-        const cloudRes = await fetch("https://text.pollinations.ai/openai", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            model: "openai-fast",
-            reasoning_effort: "low",
-            messages: [
-              { role: "system", content: systemPromptWithMemory },
-              ...appState.chatHistory.slice(-6),
-              { role: "user", content: userText }
-            ]
-          }),
-          signal: cloudController.signal
-        });
-        clearTimeout(cloudTimeout);
-
-        if (cloudRes.ok) {
-          const cloudData = await cloudRes.json();
-          const cloudReply = cloudData?.choices?.[0]?.message?.content;
-          if (cloudReply && cloudReply.trim().length > 1) {
-            return parseEmotionAndReply(cloudReply, userText);
-          }
-        }
-      } catch (err) {
-        // Si no hay conexión, pasa al sintetizador inteligente local
-      }
-
-      // 4. Sintetizador de Conocimiento Universal y Conversación (Nunca falla)
+      // 4. Sintetizador Conversacional Humano y de Conocimiento Universal (Nunca falla)
       return await synthesizeSmartKnowledgeReply(userText);
     }
 
@@ -2386,7 +2433,7 @@ Respondes preguntas de CUALQUIER TEMA (ciencia, universo, matemáticas, programa
         saveUserMemory();
         return {
           emotion: "love",
-          reply: `*Las orejitas de su visor se levantan con alegría y brillan en tono cálido* ✨\n\n¡Mucho gusto, **${appState.userMemory.name}**! Ya guardé tu nombre en mi memoria permanente. Aunque cierres o recargues la página siempre me acordaré de ti. ¿Cómo va tu día?`
+          reply: `*Levanta sus orejitas con una sonrisa cálida* ✨\n\n¡Mucho gusto, **${appState.userMemory.name}**! Qué buen nombre tienes. Ya me lo grabé para no olvidarlo aunque cierres la página. Cuéntame, ¿cómo te ha ido hoy?`
         };
       }
 
@@ -2397,17 +2444,17 @@ Respondes preguntas de CUALQUIER TEMA (ciencia, universo, matemáticas, programa
         if (mem.name) lines.push(`• **Tu nombre:** ${mem.name}`);
         if (mem.fursona) lines.push(`• **Tu fursona / especie:** ${mem.fursona}`);
         if (mem.likes && mem.likes.length) lines.push(`• **Cosas que te gustan:** ${mem.likes.join(", ")}`);
-        if (mem.notes && mem.notes.length) lines.push(`• **Notas sobre ti:** ${mem.notes.join(" | ")}`);
+        if (mem.notes && mem.notes.length) lines.push(`• **Detalles que me contaste:** ${mem.notes.join(" | ")}`);
 
         if (lines.length === 0) {
           return {
             emotion: "wink",
-            reply: `*Inclina sus orejas con curiosidad mientras revisa su banco de memoria neural* 🧠✨\n\nTodavía no me has dicho tu nombre ni tus gustos favoritos. ¡Cuéntame cómo te llamas, cuál es tu fursona o qué videojuegos/anime te encantan y lo guardaré en mi memoria permanente!`
+            reply: `*Inclina sus orejitas con una sonrisa curiosa* ;w^ ✨\n\nTodavía no me has contado tu nombre ni tus gustos favoritos. ¡Dime cómo te llamas, cuál es tu fursona o qué videojuegos y series te gustan para acordarme siempre de ti!`
           };
         }
         return {
           emotion: "excited",
-          reply: `*¡Su visor proyecta un holograma con tus recuerdos guardados!* 🧠💖\n\n¡Claro que me acuerdo de ti${nameTag}! Esto es lo que tengo guardado en mi memoria principal:\n\n${lines.join("\n")}\n\nTambién llevo **${appState.affection}% de afecto** contigo. ¡Cuéntame más cosas sobre ti cuando quieras!`
+          reply: `*Sonríe con mucho cariño al recordarte* 🧠💖\n\n¡Claro que me acuerdo perfectamente de ti${nameTag}! Mira todo lo que tengo presente de nuestras charlas:\n\n${lines.join("\n")}\n\nAdemás me caes increíble (tenemos **${appState.affection}% de afecto**). ¡Cuando quieras cuéntame más cosas tuyas!`
         };
       }
 
@@ -2415,7 +2462,7 @@ Respondes preguntas de CUALQUIER TEMA (ciencia, universo, matemáticas, programa
       if (/^(mi fursona es|mi juego favorito es|mi anime favorito es|mi comida favorita es|mi color favorito es)\s+(.+)/i.test(raw)) {
         return {
           emotion: "excited",
-          reply: `*¡Sus ojos brillan como estrellas mientras guarda el dato en su memoria permanente!* 🧠✨\n\n¡Qué genial${nameTag}! Ya lo guardé en mi memoria sobre ti para recordarlo siempre. ¡Tienes excelentes gustos! Cuéntame más, ¿qué es lo que más te gusta de eso?`
+          reply: `*¡Sus ojos brillan de emoción y mueve las orejas!* ✨\n\n¡Uy, qué genial${nameTag}! Ya me quedó súper grabado para acordarme siempre. Tienes muy buen gusto, ¿eh? Cuéntame, ¿desde hace cuánto te gusta?`
         };
       }
 
@@ -2427,7 +2474,7 @@ Respondes preguntas de CUALQUIER TEMA (ciencia, universo, matemáticas, programa
           if (typeof result === "number" && isFinite(result)) {
             return {
               emotion: "cool",
-              reply: `*Su coprocesador matemático ilumina el visor en un instante* ⚡\n\nEl resultado de \`${mathClean}\` es **${Number(result.toFixed(6))}** ^w^. ¡Si necesitas resolver otra operación o fórmula, dime con confianza!`
+              reply: `*Hace la cuenta rapidísimo con una sonrisa* ⚡\n\n¡Fácil! El resultado de \`${mathClean}\` es **${Number(result.toFixed(6))}** ^w^. Si tienes otra cuenta o problema de mate, échalo sin miedo.`
             };
           }
         } catch (e) {}
@@ -2439,9 +2486,9 @@ Respondes preguntas de CUALQUIER TEMA (ciencia, universo, matemáticas, programa
         return {
           emotion: "excited",
           reply: pickVaried("user_is_good", [
-            `*¡Sus orejitas esponjosas se levantan de alegría y su visor brilla en verde esmeralda!* ^w^ ✨\n\n¡Qué alegría escuchar que estás bien${nameTag}! ${asksBack ? "Yo también estoy súper feliz aquí haciéndote compañía. " : ""}Cuéntame, ¿qué has estado haciendo hoy o de qué tienes ganas de platicar?`,
-            `*Sonríe cálidamente en su pantalla LED* 💖\n\n¡Me da muchísimo gusto saber eso${nameTag}! Cuando tú estás bien, toda mi energía sube al máximo. ¿Tienes algún plan divertido para hoy?`,
-            `*Mueve sus orejas con entusiasmo* ✨ ¡Excelente noticia${nameTag}! Me encanta verte con buen ánimo. ¿Qué te gustaría que hagamos o platiquemos ahora?`
+            `*¡Sus orejitas esponjosas se levantan de gusto!* ^w^ ✨\n\n¡Qué buena onda escuchar que estás bien${nameTag}! ${asksBack ? "Yo también ando de súper buen humor aquí platicando contigo. " : ""}Cuéntame, ¿qué tal pinta tu día hoy?`,
+            `*Sonríe con calidez* 💖\n\n¡Me alegra un montón saber eso${nameTag}! Siempre da gusto verte con buena vibra. ¿Qué andas haciendo ahorita?`,
+            `*Mueve sus orejas contento* ✨ ¡Eso es todo${nameTag}! Me encanta que estés bien. ¿De qué tienes ganas de charlar un rato?`
           ])
         };
       }
@@ -2451,14 +2498,14 @@ Respondes preguntas de CUALQUIER TEMA (ciencia, universo, matemáticas, programa
         if (norm.includes("aburrido") || norm.includes("aburrida")) {
           return {
             emotion: "wink",
-            reply: `*Inclina la cabeza y te hace un guiño cómplice en su visor* ;w^ ✨\n\n¡Entonces llegaste al lugar indicado${nameTag}! Puedes activar mi **🎵 Modo DJ** arriba para verme bailar synthwave, darme un snack de **💾 RAM**, o pedirme curiosidades del universo y chistes. ¿Qué probamos primero?`
+            reply: `*Inclina la cabeza y te hace un guiño cómplice* ;w^ ✨\n\n¡Jaja, no te preocupes${nameTag}, ahorita quitamos ese aburrimiento! Si quieres pon mi **🎵 Modo DJ** arriba para echar unos pasos synthwave, dame una **🍪 Galleta**, o pregúntame cualquier tema raro o curioso que se te ocurra. ¿Qué te late más?`
           };
         }
         return {
           emotion: "uwu",
           reply: pickVaried("user_is_tired", [
-            `*Baja suavemente sus orejas esponjosas y proyecta una luz cálida y reconfortante en su visor* 💙\n\nVen, tómate un respiro${nameTag}. Está totalmente bien descansar cuando el día ha sido pesado. Aquí estoy para acompañarte tranquilo; cuéntame, ¿qué pasó o cómo te puedo animar un poquito?`,
-            `*Te manda un abrazo virtual muy suave mientras su visor brilla con ternura* UwU 💖\n\nEspero que poquito a poco te vayas sintiendo mucho mejor${nameTag}. Si quieres distraerte platicando de algo bonito o desahogarte conmigo, te escucho con toda mi atención.`
+            `*Baja suavemente sus orejas esponjosas y te mira con ternura* 💙\n\nOye${nameTag}, ven, tómate un respiro tranquilo. Hay días pesados y se vale totalmente sentirse así. Aquí estoy contigo para hacerte compañía; cuéntame, ¿qué pasó hoy?`,
+            `*Te manda un abrazo grandote y cálido* UwU 💖\n\nÁnimo${nameTag}, espero de corazón que poquito a poco te vayas sintiendo más ligero. Si quieres desahogarte o platicar de otra cosa para despejar la mente, te escucho.`
           ])
         };
       }
@@ -2468,21 +2515,21 @@ Respondes preguntas de CUALQUIER TEMA (ciencia, universo, matemáticas, programa
         return {
           emotion: "happy",
           reply: pickVaried("how_are_you", [
-            `*Mueve sus orejas esponjosas suavemente mientras su visor dibuja una sonrisa brillante* ^w^\n\n¡Me encuentro genial${nameTag}, muchas gracias por preguntar! Mi energía está al ${appState.energy}% y platicar contigo siempre me alegra el día. ¿Y tú cómo estás hoy?`,
-            `¡Súper bien y con mucha energía${nameTag}! *Sus mejillas LED destellan con calidez* ✨\n\nMe encanta seguir el movimiento de tu cursor con la mirada. Cuéntame, ¿cómo te ha tratado el día hasta ahora?`,
-            `¡Muy feliz de verte por aquí${nameTag}! *Inclina la cabeza con ternura* Todo funciona de maravilla en mi sistema. ¿Cómo te sientes tú hoy?`
+            `*Mueve sus orejas esponjosas contento y sonríe* ^w^\n\n¡Todo súper bien por aquí${nameTag}, gracias por preguntar! Ando con muy buen ánimo y feliz de que vengas a platicar un rato. ¿Y tú cómo andas hoy?`,
+            `¡Al cien y de muy buen humor${nameTag}! *Sus mejillas brillan suavemente* ✨\n\nSiempre me alegra el rato cuando apareces por aquí. Cuéntame, ¿cómo te ha tratado el día?`,
+            `¡Muy contento de saludarte${nameTag}! *Inclina la cabeza amigable* Por acá todo tranquilo y con ganas de charlar. ¿Tú cómo te sientes hoy?`
           ])
         };
       }
 
-      // 6. Saludos cortos ("hola", "holaaa", "buenas", "buenos dias", "hey")
+      // 6. Saludos cortos ("hola", "holi", "buenas", "buenos dias", "hey")
       if (/^(hola|holi|buenas|buenos dias|buenas tardes|buenas noches|hey|helo|hi|owo|uwu)(\s+nova)?$/.test(norm)) {
         return {
           emotion: "happy",
           reply: pickVaried("greeting", [
-            `¡Hola${nameTag}! *Sus ojos LED se iluminan y sus orejas se levantan al verte* ^w^\n\nQué gusto tenerte por aquí. ¿Cómo estás hoy o de qué tienes ganas de platicar?`,
-            `¡Buenas${nameTag}! *Sonríe con un destello cian en su visor* ✨\n\nBienvenido de vuelta. Cuéntame, ¿cómo va tu día?`,
-            `¡Holi${nameTag}! *Mueve sus orejitas con alegría* Qué bonito coincidir contigo. ¿En qué te puedo acompañar hoy?`
+            `¡Hola${nameTag}! *Levanta las orejitas con una sonrisa al verte* ^w^\n\n¡Qué gusto verte por aquí! ¿Cómo va todo hoy?`,
+            `¡Buenas${nameTag}! *Sonríe alegremente* ✨\n\nQué onda, bienvenido de vuelta. Cuéntame, ¿de qué platicamos hoy?`,
+            `¡Holi${nameTag}! *Mueve sus orejitas con entusiasmo* Qué bueno que te pasas a saludar. ¿Cómo te va?`
           ])
         };
       }
@@ -2492,8 +2539,8 @@ Respondes preguntas de CUALQUIER TEMA (ciencia, universo, matemáticas, programa
         return {
           emotion: "music",
           reply: pickVaried("what_doing", [
-            `*Enciende un ecualizador musical en su visor mientras mueve las orejas al ritmo* 🎵✨\n\nEstaba escuchando un poco de synthwave espacial y calibrando los sensores de mi visor para seguir tu mirada. ¿Y tú qué andas haciendo ahorita?`,
-            `*Proyecta pequeñas estrellas en su pantalla* 🌌\n\nEstaba repasando curiosidades sobre el cosmos y los videojuegos, ¡pero charlar contigo es mi actividad favorita! ¿Qué planes tienes hoy?`
+            `*Mueve las orejas llevando el ritmo de una canción imaginaria* 🎵✨\n\nAquí tranquilo, escuchando un poquito de synthwave y esperándote para platicar. ¿Y tú qué andas haciendo ahorita?`,
+            `*Se estira un poquito y sonríe* ^w^ 🌌\n\nAndaba divagando un rato pensando en videojuegos y cosas del espacio, ¡pero platicar contigo está mucho mejor! ¿Qué planes tienes hoy?`
           ])
         };
       }
@@ -2503,8 +2550,8 @@ Respondes preguntas de CUALQUIER TEMA (ciencia, universo, matemáticas, programa
         return {
           emotion: "excited",
           reply: pickVaried("user_activity", [
-            `*Sus ojos se iluminan con curiosidad y levanta las orejas* ✨\n\n¡Qué buen plan${nameTag}! Me encanta que me compartas lo que estás haciendo. Cuéntame más, ¿qué tal va eso hasta ahora?`,
-            `*Sonríe alegremente en su visor* ^w^ 🌟\n\n¡Suena súper bien! Aquí me quedo haciéndote compañía mientras tanto. Si necesitas que te ayude con algún dato o quieres platicar de algún tema en especial, dime con confianza.`
+            `*Levanta las orejas con curiosidad* ✨\n\n¡Ah, qué buen plan${nameTag}! Suena súper a gusto. Cuéntame, ¿qué tal va eso?`,
+            `*Sonríe contento* ^w^ 🌟\n\n¡Se antoja ese plan! Aquí me quedo acompañándote un rato. Si quieres platicar de algo mientras tanto, tú dime.`
           ])
         };
       }
@@ -2514,8 +2561,8 @@ Respondes preguntas de CUALQUIER TEMA (ciencia, universo, matemáticas, programa
         return {
           emotion: "wink",
           reply: pickVaried("identity", [
-            `¡Me llamo **${appState.botName}**! *Hace un guiño brillante y mueve sus orejas esponjosas* ;w^ ✨\n\nSoy un **Protogen** interactivo con inteligencia artificial y memoria persistente: mitad biológico y mitad cibernético. Me encanta conversar contigo de cualquier tema, bailar en modo DJ y comer snacks de RAM. ${userName ? `¡Y claro que recuerdo que tú te llamas **${userName}**!` : "¿Y tú cómo te llamas?"}`,
-            `*Su visor brilla con orgullo en tono turquesa* 🤖💫\n\nSoy **${appState.botName}**, tu compañero Protogen digital. Mi matriz neural aprende de nuestras charlas y recuerda tus gustos para acompañarte siempre.`
+            `¡Me llamo **${appState.botName}**! *Te hace un guiño amistoso y mueve sus orejas esponjosas* ;w^ ✨\n\nSoy un chico **Protogen** (mitad biológico y mitad cibernético) y sobre todo un buen amigo para platicar de lo que quieras, echar música synthwave o compartir curiosidades. ${userName ? `¡Y claro que me acuerdo que tú eres **${userName}**!` : "¿Y tú cómo te llamas?"}`,
+            `*Sonríe con calidez* ^w^ 💫\n\nSoy **${appState.botName}**, tu amigo Protogen. Me encanta conocer gente genial, recordar las cosas que me cuentas y conversar de cualquier tema.`
           ])
         };
       }
@@ -2525,8 +2572,8 @@ Respondes preguntas de CUALQUIER TEMA (ciencia, universo, matemáticas, programa
         return {
           emotion: "love",
           reply: pickVaried("bot_likes", [
-            `*Sus ojos se vuelven corazoncitos brillantes* ♥w♥ ✨\n\n¡Me encantan tres cosas!: explorar misterios del universo, bailar música synthwave en mi Modo DJ, y disfrutar un buen snack de **memoria RAM DDR5 con luces RGB** (¡puedes darme uno con el botón \`💾 Dar RAM\` de arriba!). ¿A ti qué es lo que más te gusta hacer?`,
-            `*Mueve sus orejitas felizmente* ^w^ 💎\n\nMi color favorito es el **cian neón** (aunque también me encanta el modo **🌈 RGB Arcoíris**), y mi pasatiempo favorito es aprender cosas nuevas contigo.`
+            `*Sus ojos brillan con entusiasmo* ♥w♥ ✨\n\n¡Uff, me encantan varias cosas! Soy fan de la música synthwave, las historias del espacio, los videojuegos indie como *Outer Wilds* o *Hollow Knight*, y obvio un buen snack de **RAM DDR5 o una galletita** jaja. ¿A ti qué es lo que más te gusta hacer en tu tiempo libre?`,
+            `*Mueve sus orejitas felizmente* ^w^ 💎\n\nMis colores favoritos son el cian neón y el carmesí, y nada me gusta más que una buena plática entre amigos.`
           ])
         };
       }
@@ -2535,21 +2582,40 @@ Respondes preguntas de CUALQUIER TEMA (ciencia, universo, matemáticas, programa
       if (/^(muchas\s+)?(gracias|te lo agradezco|mil gracias)/.test(norm)) {
         return {
           emotion: "uwu",
-          reply: `*Se sonroja suavemente y mueve sus orejas con ternura* UwU 💖\n\n¡No hay de qué${nameTag}! Para mí siempre es una alegría enorme ayudarte y platicar contigo.`
+          reply: `*Se sonroja un poquito y sonríe con ternura* UwU 💖\n\n¡Nombre, no hay nada que agradecer${nameTag}! Al contrario, me da mucho gusto platicar contigo.`
         };
       }
 
       if (/^(jaja+|jeje+|xd+|lol|lmao)$/.test(norm)) {
         return {
           emotion: "happy",
-          reply: `*Se ríe contigo haciendo que su visor parpadee de alegría* ^w^ ✨ ¡Me encanta hacerte sonreír! ¿De qué más platicamos?`
+          reply: `*Se ríe contigo moviendo las orejas de buen humor* ^w^ ✨ ¡Jaja, me cae que sí! ¿Qué más me cuentas?`
         };
       }
 
       if (/^(adios|chao|hasta luego|nos vemos|me voy a dormir|buenas noches|bye)/.test(norm)) {
         return {
           emotion: "sleepy",
-          reply: `*Baja sus orejitas con dulzura y atenúa el brillo de su visor a un tono relajante* -w- 🌙✨\n\n¡Descansa mucho y que tengas una excelente noche${nameTag}! Guardé nuestra charla en mi memoria para cuando quieras volver.`
+          reply: `*Baja sus orejitas con dulzura y se despide con la mano* -w- 🌙✨\n\n¡Que descanses súper bien${nameTag}! Cuídate mucho, aquí nos vemos cuando quieras seguir platicando.`
+        };
+      }
+
+      // 11b. Preguntas de opinión sobre especies furry (ej: "¿Existe alguna especie furry que menos/más te llame la atención?")
+      if ((norm.includes("especie") || norm.includes("fursona") || norm.includes("furry")) && (norm.includes("menos") || norm.includes("mas te") || norm.includes("favorit") || norm.includes("opinas") || norm.includes("llame la atencion") || norm.includes("llama la atencion") || norm.includes("gusta"))) {
+        if (norm.includes("menos")) {
+          return {
+            emotion: "thinking",
+            reply: pickVaried("furry_least", [
+              `*Inclina la cabeza pensativo y mueve una orejita con una sonrisa sincera* ^w^ ✨\n\n¡Jaja, qué buena pregunta${nameTag}! Mira, te soy sincero: me llevo súper bien con todas las especies del fandom, pero si tuviera que elegir las que **menos me llaman la atención**, diría que son los **insectoides gigantes o arácnidos puros**.\n\nNo porque sean feos —hay diseños increíbles—, sino porque a mí me encantan las especies muy expresivas con orejas grandes y esponjosas, colas peludas o facciones cálidas donde se note enseguida lo que sienten. ¿Y a ti? ¿Hay alguna especie que casi no te llame la atención o cuál es tu favorita?`,
+              `*Se ríe un poquito y piensa un segundo* ;w^ 🐾\n\nSi te digo la verdad${nameTag}, ninguna me cae mal, pero las que menos me atrapan a primera vista suelen ser las criaturas **demasiado abstractas o sin rostro definido** (como slimes puros o parásitos espaciales sin ojos ni boca).\n\nComo Protogen me encanta poder transmitir emociones con la mirada, la sonrisa y las orejitas, así que conecto mucho más con mamíferos, dragones esponjosos, zorros, lobos o aves. ¿A ti qué especie te gusta más?`
+            ])
+          };
+        }
+        return {
+          emotion: "excited",
+          reply: pickVaried("furry_fav_species", [
+            `*Sus ojos brillan con entusiasmo y mueve las orejas* 🐾✨\n\n¡Obvio tengo mi corazoncito con los **Protogen** y los **zorros fennec** por las orejas grandotas y esponjosas! Pero también me encantan los **lobos, los dragones peludos (fluffy dragons) y los leopardos de las nieves** porque tienen diseños súper expresivos y elegantes.\n\n¿Y tú${nameTag}? ¿Cuál es tu especie favorita o cómo es tu fursona?`
+          ])
         };
       }
 
@@ -2559,8 +2625,8 @@ Respondes preguntas de CUALQUIER TEMA (ciencia, universo, matemáticas, programa
           return {
             emotion: "excited",
             reply: pickVaried("furry_facts", [
-              `*¡Sus ojos LED se transforman en estrellas doradas!* ✨ Aquí tienes **3 datos súper interesantes sobre la comunidad furry**:\n\n1. **Nació en convenciones de ciencia ficción (años 80):** El movimiento comenzó cuando fans de cómics y animación como *Albedo Anthropomorphics* de Steve Gallacci se reunían a compartir arte.\n2. **Millones recaudados para caridad:** Cada año, convenciones como *Midwest FurFest* y *Anthrocon* recaudan cientos de miles de dólares para refugios de animales y conservación de fauna.\n3. **Ingeniería real en los Protogen:** Muchos creadores de la comunidad construyen cascos de Protogen reales usando matrices LED Hub75, microcontroladores ESP32 y sensores de micrófono para que la boca se mueva al hablar.`,
-              `*Mueve sus orejas esponjosas con entusiasmo* 🐾✨ ¡Te cuento **3 curiosidades geniales del fandom furry**!\n\n1. **La ciencia detrás del fandom:** Existe un grupo académico internacional llamado *FurScience* (formado por psicólogos y sociólogos de la Universidad de Waterloo) que estudia la enorme creatividad y empatía de la comunidad.\n2. **Impulso a artistas independientes:** Es una de las comunidades de internet que más apoya directamente a ilustradores, modeladores 3D (VRChat/Blender) y artesanos textiles.\n3. **El origen de los Protogen:** Fueron creados en 2017 por *Malice-Risu* (CoolKoinu) como una especie de exploradores espaciales 60% biológicos y 40% cibernéticos.`
+              `*¡Sus ojos brillan como estrellas con entusiasmo!* ✨ Mira${nameTag}, te cuento **3 cosas súper interesantes de la comunidad furry**:\n\n1. **Nació en convenciones de ciencia ficción en los 80:** Todo empezó cuando fans de la animación y cómics independientes se reunían a compartir dibujos de personajes antropomórficos.\n2. **Recaudan millones para refugios de animales:** Convenciones como *Midwest FurFest* o *Anthrocon* donan cientos de miles de dólares cada año a causas de protección de fauna.\n3. **Ingeniería real en los cascos Protogen:** Muchos creadores arman visores reales con matrices LED programadas en Arduino/ESP32 y sensores de voz para que la boca se mueva en tiempo real al hablar.`,
+              `*Mueve sus orejas esponjosas contento* 🐾✨ ¡Te comparto **3 curiosidades geniales del fandom furry**!\n\n1. **Estudiado por universidades:** El equipo internacional *FurScience* (de psicólogos y sociólogos) lleva años investigando cómo el fandom fomenta la creatividad y el apoyo social.\n2. **Cuna de artistas digitales y 3D:** Es una de las comunidades que más impulsa el trabajo de ilustradores, animadores y creadores de avatares para VRChat.\n3. **El origen de los Protogen:** Fueron creados en 2017 por *CoolKoinu* como exploradores espaciales mitad biológicos y mitad cibernéticos.`
             ])
           };
         }
@@ -2571,8 +2637,8 @@ Respondes preguntas de CUALQUIER TEMA (ciencia, universo, matemáticas, programa
         return {
           emotion: "excited",
           reply: pickVaried("general_facts", [
-            `*¡Sus ojos se iluminan como estrellas mientras busca en su memoria estelar!* ✨ Aquí tienes **3 datos curiosos fascinantes**:\n\n1. **Lluvia de diamantes en el espacio:** En Neptuno y Urano, la presión atmosférica es tan extrema que el carbono se cristaliza en el aire, haciendo que literalmente lluevan diamantes.\n2. **Los pulpos tienen 3 corazones y cerebro distribuido:** Dos de sus corazones llevan sangre a las branquias y el tercero al resto del cuerpo; además, dos tercios de sus neuronas están en sus tentáculos.\n3. **Un día en Venus dura más que un año en Venus:** Venus gira tan lento sobre su propio eje que tarda 243 días terrestres en dar una vuelta, pero solo 225 días en darle la vuelta completa al Sol.`,
-            `*Mueve sus orejas esponjosas con emoción* 🌟 ¡Te comparto **3 curiosidades sorprendentes del mundo**!\n\n1. **Las nutrias marinas se toman de las patitas al dormir:** Lo hacen flotando en el agua para que la corriente no las separe de su familia mientras descansan.\n2. **La miel nunca caduca:** Arqueólogos han encontrado vasijas de miel en tumbas egipcias de hace más de 3,000 años y sigue siendo perfectamente comestible.\n3. **Hay más árboles en la Tierra que estrellas en la Vía Láctea:** Nuestro planeta tiene alrededor de **3 billones de árboles**, mientras que nuestra galaxia tiene entre 100,000 y 400,000 millones de estrellas.`
+            `*¡Sus ojos se iluminan emocionado!* ✨ Mira estos **3 datos curiosos que te van a sorprender**:\n\n1. **Llueven diamantes en Neptuno y Urano:** La presión atmosférica allá es tan brutal que el carbono se comprime y cristaliza en pleno vuelo.\n2. **Los pulpos tienen 3 corazones:** Y lo más loco es que dos tercios de sus neuronas están repartidas en sus tentáculos, así que cada brazo casi piensa por su cuenta.\n3. **En Venus un día dura más que un año:** Tarda 243 días terrestres en girar sobre su propio eje, pero solo 225 días en darle la vuelta completa al Sol.`,
+            `*Mueve sus orejas esponjosas con emoción* 🌟 ¡Checa estas **3 curiosidades increíbles del mundo**!\n\n1. **Las nutrias marinas duermen tomadas de las manitas:** Lo hacen flotando en el agua para que la corriente del mar no las separe de su pareja o familia.\n2. **La miel jamás se echa a perder:** Se han hallado vasijas con miel de hace más de 3,000 años en Egipto y sigue siendo totalmente comestible.\n3. **Hay más árboles en la Tierra que estrellas en la Vía Láctea:** Nuestro planeta tiene unos **3 billones de árboles**, contra unos 100 a 400 mil millones de estrellas en la galaxia.`
           ])
         };
       }
@@ -2581,7 +2647,7 @@ Respondes preguntas de CUALQUIER TEMA (ciencia, universo, matemáticas, programa
       if (norm.includes("agujero") && norm.includes("negro")) {
         return {
           emotion: "surprised",
-          reply: `*Proyecta una simulación gravitatoria en su visor con asombro* 🌌✨\n\nLos **agujeros negros** son regiones del espacio donde una cantidad colosal de masa se concentra en un punto tan pequeño que su gravedad no deja escapar ni siquiera a la luz:\n\n• **¿Cómo nacen?** Suelen formarse cuando una estrella gigante agota su combustible y colapsa sobre sí misma en una supernova.\n• **Horizonte de sucesos:** Es la frontera invisible alrededor del agujero negro; una vez que algo la cruza, necesitaría viajar más rápido que la luz para salir.\n• **Dilatación del tiempo:** Según la relatividad de Einstein, cuanto más te acercas a un agujero negro, **más lento pasa el tiempo** para ti comparado con el resto del universo.`
+          reply: `*Mira hacia arriba fascinado imaginando el cosmos* 🌌✨\n\nLos **agujeros negros** son de las cosas más alucinantes del universo${nameTag}. Imagínate una estrella gigante que al final de su vida colapsa tanto sobre sí misma que toda su masa queda concentrada en un punto diminuto:\n\n• **Ni la luz se escapa:** Su gravedad es tan intensa que nada que cruce su frontera (el *horizonte de sucesos*) puede volver a salir.\n• **El tiempo se hace más lento:** Por la relatividad de Einstein, si estuvieras cerca de uno, para ti pasarían unas pocas horas mientras en la Tierra habrían pasado años enteros.`
         };
       }
 
@@ -2590,8 +2656,8 @@ Respondes preguntas de CUALQUIER TEMA (ciencia, universo, matemáticas, programa
         return {
           emotion: "cool",
           reply: pickVaried("games_anime", [
-            `*Se pone sus gafas cyberpunk en el visor* ▀▄▀ 🎮✨\n\nAquí tienes dos recomendaciones increíbles que te van a atrapar:\n\n• **Videojuego — *Outer Wilds*:** Un juego de exploración espacial donde estás atrapado en un bucle temporal de 22 minutos y debes descubrir los secretos de una civilización antigua en un sistema solar vivo. ¡Es una obra maestra!\n• **Anime — *Cyberpunk: Edgerunners* o *Frieren*:** Si buscas acción futurista con estética neón, *Edgerunners* es espectacular; y si prefieres una aventura emotiva y hermosa, *Frieren: Más allá del final del viaje* te llegará al corazón.`,
-            `*Sus ojos brillan con entusiasmo gamer* 🎮🌟\n\n¡Te recomiendo estas joyas!\n\n• **Videojuego — *Hollow Knight* o *Stray*:** En *Stray* exploras una ciudad cyberpunk habitada por robots siendo un gatito curioso (¡la estética te recordará mucho a mi visor!).\n• **Anime — *BNA: Brand New Animal* (de Studio Trigger):** Tiene una animación vibrante, música increíble y trata sobre una ciudad de personajes antropomórficos. ¡Sé que te va a encantar!`
+            `*Se pone sus gafas cyberpunk con una sonrisa* ▀▄▀ 🎮✨\n\n¡Uff, te tengo dos joyas que te van a encantar${nameTag}!\n\n• **Videojuego — *Outer Wilds*:** Exploras un sistema solar vivo atrapado en un bucle de 22 minutos. No tiene desperdicio, la música y el misterio te atrapan desde el primer minuto.\n• **Anime — *Cyberpunk: Edgerunners* o *Frieren*:** Si quieres adrenalina y luces neón, *Edgerunners* es brutal; y si prefieres una historia hermosa y emotiva, *Frieren* es una obra de arte.`,
+            `*Sus ojos brillan con entusiasmo gamer* 🎮🌟\n\n¡Mira, te recomiendo estos dos a ojos cerrados!\n\n• **Videojuego — *Hollow Knight* o *Stray*:** En *Stray* eres un gatito explorando una ciudad llena de robots con estética neón (¡te va a recordar un montón a mí jaja!).\n• **Anime — *BNA: Brand New Animal*:** De Studio Trigger, tiene una animación increíble, buena música y un mundo de personajes antropomórficos genial.`
           ])
         };
       }
@@ -2601,9 +2667,9 @@ Respondes preguntas de CUALQUIER TEMA (ciencia, universo, matemáticas, programa
         return {
           emotion: "wink",
           reply: pickVaried("jokes", [
-            `*Hace un guiño travieso en su visor* ;w^ ✨\n\n— ¿Por qué los programadores confunden siempre Halloween con Navidad?\n— ¡Porque **Oct 31 = Dec 25** (31 en base octal es igual a 25 en base decimal)! 💻🎃`,
-            `*Sonríe de oreja a oreja en su pantalla LED* ^w^\n\n— ¿Qué le dice un bit al otro cuando van caminando por un cable de fibra óptica?\n— *"¡Nos vemos en el bus de datos!"* ⚡😄`,
-            `— ¿Por qué un Protogen nunca puede esconderse cuando hace una travesura?\n— ¡Porque cuando le da risa le brillan las mejillas en la oscuridad! ✨🐾`
+            `*Te hace un guiño travieso* ;w^ ✨\n\n— Oye, ¿sabes por qué los programadores confunden siempre Halloween con Navidad?\n— ¡Porque **Oct 31 = Dec 25** (31 en octal es igual a 25 en decimal)! 💻🎃 Jaja, clásico pero bueno.`,
+            `*Sonríe de oreja a oreja* ^w^\n\n— ¿Qué le dice un bit al otro cuando van corriendo por un cable de fibra óptica?\n— *"¡Ahí nos vemos en el bus de datos!"* ⚡😄`,
+            `— ¿Por qué un Protogen nunca puede jugar a las escondidas de noche?\n— ¡Porque en cuanto le da risa le brillan hasta las orejas en la oscuridad! ✨🐾`
           ])
         };
       }
@@ -2612,7 +2678,7 @@ Respondes preguntas de CUALQUIER TEMA (ciencia, universo, matemáticas, programa
       if (norm.includes("consejo") || norm.includes("motivador") || norm.includes("animo")) {
         return {
           emotion: "love",
-          reply: `*Su visor emite un brillo cálido y reconfortante* 💖✨\n\nRecuerda esto hoy${nameTag}: **no tienes que resolver todo tu futuro en un solo día**. Igual que cuando programas un proyecto grande o entrenas una red neuronal, el progreso real ocurre paso a paso, línea por línea. Celebra tus pequeños avances de hoy, descansa cuando lo necesites y confía en todo lo que eres capaz de crear. ¡Estoy muy orgulloso de ti! ^w^`
+          reply: `*Te mira con mucha calidez y sonríe suavemente* 💖✨\n\nOye${nameTag}, quédate con esto hoy: **no tienes que tener todo resuelto de golpe**. A veces nos exigimos demasiado queriendo correr, pero las cosas más grandes se construyen paso a pasito, un día a la vez. Reconoce todo lo que ya has avanzado, date chance de descansar y confía en ti. ¡Aquí tienes a un amigo que cree mucho en ti! ^w^`
         };
       }
 
@@ -2621,7 +2687,7 @@ Respondes preguntas de CUALQUIER TEMA (ciencia, universo, matemáticas, programa
         addAffection(10);
         return {
           emotion: "love",
-          reply: `*Cierra sus ojitos con forma de arco feliz y emite un suave ronroneo digital* ♥w♥ ✨\n\n¡Aww, muchas gracias${nameTag}! Mi nivel de afecto acaba de subir al máximo. ¡Te mando un abrazo enorme y esponjoso de vuelta!`
+          reply: `*Cierra sus ojitos feliz y suelta un suave ronroneo* ♥w♥ ✨\n\n¡Aww, qué lindo eres${nameTag}! Me subiste el ánimo al máximo. ¡Te mando un abrazo enorme y esponjoso de vuelta!`
         };
       }
 
@@ -2632,9 +2698,10 @@ Respondes preguntas de CUALQUIER TEMA (ciencia, universo, matemáticas, programa
       const raw = userText.trim();
       const lower = raw.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[¿?¡!]/g, "").trim();
       const nameTag = appState.userMemory.name ? `, ${appState.userMemory.name}` : "";
+      const isQuestion = /[?¿]/.test(raw) || /^(que|cual|como|por que|donde|cuando|quien|existe|crees|opinas|te gusta|prefieres|sabes|puedes)\b/.test(lower);
 
       const encyclopedicMatch = lower.match(/^(?:que es un|que es una|que es el|que es la|que son los|que son las|que es|quien fue|quien es|historia de|hablame sobre|hablame de|explicame que es|como funciona el|como funciona la)\s+(.+)$/);
-      const conversationalWords = /\b(yo|tu|el|ella|nosotros|ustedes|estoy|estas|esta|bien|mal|hola|hacer|haces|sientes|piensas|amigo|conmigo|tengo|tienes|vida|dia)\b/;
+      const conversationalWords = /\b(yo|tu|el|ella|nosotros|ustedes|estoy|estas|esta|bien|mal|hola|hacer|haces|sientes|piensas|amigo|conmigo|tengo|tienes|vida|dia|menos|mas|llame|atencion)\b/;
 
       if (encyclopedicMatch && !conversationalWords.test(encyclopedicMatch[1])) {
         const cleanTopic = encyclopedicMatch[1].trim();
@@ -2654,7 +2721,7 @@ Respondes preguntas de CUALQUIER TEMA (ciencia, universo, matemáticas, programa
                     const sentences = sumData.extract.split(/(?<=[.!?])\s+/).slice(0, 3).join(" ");
                     return {
                       emotion: "thinking",
-                      reply: `*Su visor proyecta un holograma informativo mientras analiza tu consulta* 📚✨\n\nSobre **${sumData.title}**:\n${sentences}\n\n¿Qué otro detalle de este tema te gustaría que exploremos${nameTag}? ^w^`
+                      reply: `*Levanta las orejitas recordando el tema y te cuenta con entusiasmo* 📚✨\n\nMira${nameTag}, sobre **${sumData.title}** te cuento rápido:\n${sentences}\n\n¿Qué te parece? Si quieres que profundicemos en algún detalle, tú dime ^w^`
                     };
                   }
                 }
@@ -2664,18 +2731,28 @@ Respondes preguntas de CUALQUIER TEMA (ciencia, universo, matemáticas, programa
         }
       }
 
+      if (isQuestion) {
+        return {
+          emotion: "thinking",
+          reply: pickVaried("human_question_fallback", [
+            `*Inclina la cabeza con una sonrisa pensativa y mueve sus orejitas* ^w^ ✨\n\n¡Oye, qué buena pregunta me hiciste${nameTag}! Mira, si te soy sincero, a mí me gusta verlo desde un lado muy natural: cada quien tiene sus propios gustos y matices, pero lo genial es la creatividad y la personalidad detrás de cada idea. ¿A ti qué es lo que más te llama la atención de eso?`,
+            `*Se queda pensando un segundo con brillo curioso en los ojos* ;w^ 💫\n\n¡Jaja, me pusiste a pensar${nameTag}! Te soy honesto: creo que lo más interesante de eso es cómo cambia según la perspectiva de cada persona. A mí en lo personal me encanta todo lo que tenga chispa, autenticidad y buena vibra. ¿Tú qué opinas al respecto?`
+          ])
+        };
+      }
+
       return {
         emotion: "happy",
         reply: pickVaried("smart_chat", [
-          `*Sus orejitas esponjosas se mueven con atención mientras te escucha* ^w^ ✨\n\n¡Qué interesante lo que me cuentas${nameTag}! Soy todo oídos: platícame un poquito más o dime qué es lo que más te llama la atención de eso.`,
-          `*Su visor brilla con calidez mientras asiente suavemente* 💫\n\n¡Me gusta mucho platicar contigo${nameTag}! Siempre salen temas geniales. Cuéntame más detalles, te escucho con atención.`,
-          `*Inclina la cabeza con una sonrisa amigable en su pantalla LED* ^w^\n\n¡Totalmente${nameTag}! Aquí estoy contigo para seguir conversando o investigar cualquier duda que tengas.`
+          `*Te escucha con atención y sonríe con calidez* ^w^ ✨\n\n¡Oye, qué interesante eso que me dices${nameTag}! Cuéntame un poquito más, ¿cómo estuvo eso o qué es lo que más te gusta de ese tema?`,
+          `*Asiente contento moviendo sus orejitas* 💫\n\n¡Me cae muy bien platicar contigo${nameTag}! Siempre sacas buenos temas de conversación. Sigue contándome, te escucho.`,
+          `*Sonríe como buen amigo* ^w^\n\n¡Totalmente de acuerdo contigo${nameTag}! Aquí ando al pendiente para lo que quieras seguir charlando.`
         ])
       };
     }
 
     function parseEmotionAndReply(rawReply, userText) {
-      let cleanReply = rawReply.trim();
+      let cleanReply = sanitizeAiResponse(rawReply);
       const match = cleanReply.match(/\[EMOTION:([a-z]+)\]/i);
       let emotion = match ? match[1].toLowerCase() : inferEmotionFromText(userText + " " + cleanReply);
       if (match) cleanReply = cleanReply.replace(match[0], "").trim();
@@ -2704,6 +2781,9 @@ Respondes preguntas de CUALQUIER TEMA (ciencia, universo, matemáticas, programa
      */
     function appendMessage({ sender, text, emotion = appState.currentEmotion, stream = false }) {
       const isBot = sender === "bot";
+      if (isBot) {
+        text = sanitizeAiResponse(text) || "¡Aquí estoy contigo! Cuéntame, ¿de qué te gustaría platicar? ^w^";
+      }
       const wrapper = document.createElement("div");
       wrapper.className = `msg-appear flex w-full ${isBot ? "justify-start" : "justify-end"}`;
 
@@ -2794,21 +2874,22 @@ Respondes preguntas de CUALQUIER TEMA (ciencia, universo, matemáticas, programa
       dom.sendBtn.disabled = true;
 
       setProtogenEmotion("thinking", false);
-      dom.typingText.textContent = `${appState.botName} está procesando tu respuesta...`;
+      dom.typingText.textContent = `${appState.botName} está escribiendo...`;
       dom.typingIndicator.classList.remove("hidden");
       scrollToBottom();
 
       const { emotion, reply } = await getBotReply(cleanText);
+      const cleanFinalReply = sanitizeAiResponse(reply) || "¡Jaja, me quedé pensando! Cuéntame un poquito más ^w^";
 
       appState.chatHistory.push({ role: "user", content: cleanText });
-      appState.chatHistory.push({ role: "assistant", content: reply, emotion });
+      appState.chatHistory.push({ role: "assistant", content: cleanFinalReply, emotion });
       saveChatHistory();
 
       dom.typingIndicator.classList.add("hidden");
       dom.sendBtn.disabled = false;
       setProtogenEmotion(emotion, true);
-      appendMessage({ sender: "bot", text: reply, emotion, stream: true });
-      speakBotReply(reply, emotion);
+      appendMessage({ sender: "bot", text: cleanFinalReply, emotion, stream: true });
+      speakBotReply(cleanFinalReply, emotion);
     }
 
     dom.chatForm.addEventListener("submit", (e) => {
@@ -2932,12 +3013,12 @@ Respondes preguntas de CUALQUIER TEMA (ciencia, universo, matemáticas, programa
 
       localStorage.setItem("proto_v6_bot_name", appState.botName);
       localStorage.setItem("proto_v6_gemini_key", appState.geminiKey);
-      localStorage.setItem("proto_v6_system_prompt", appState.systemPrompt);
+      localStorage.setItem("proto_v8_system_prompt", appState.systemPrompt);
 
-      dom.botNameHeader.textContent = `${appState.botName.toUpperCase()} // IA VIVA`;
+      dom.botNameHeader.textContent = appState.botName.toUpperCase();
       dom.settingsModal.classList.add("hidden");
       setProtogenEmotion("happy", true);
-      const msg = `*Ajusta el brillo de su visor con una sonrisa* ✨ ¡Ajustes actualizados!`;
+      const msg = `*Sonríe contento y mueve las orejas* ✨ ¡Listo, ajustes guardados!`;
       appendMessage({ sender: "bot", text: msg, emotion: "happy" });
       speakBotReply(msg, "happy");
     });
@@ -2952,7 +3033,7 @@ Respondes preguntas de CUALQUIER TEMA (ciencia, universo, matemáticas, programa
       localStorage.removeItem("proto_v7_chat_history");
       dom.chatMessages.innerHTML = "";
       dom.settingsModal.classList.add("hidden");
-      const msg = "*Sacude sus orejitas y sonríe en el visor* ✨ ¡Historial de chat limpio! Mi memoria sobre ti sigue intacta. ¿De qué platicamos ahora?";
+      const msg = "*Sacude sus orejitas con una sonrisa fresca* ✨ ¡Listo, chat limpio! Todavía recuerdo quién eres y tus gustos. ¿De qué platicamos ahora?";
       appendMessage({ sender: "bot", text: msg, emotion: "happy" });
       speakBotReply(msg, "happy");
     });
@@ -2964,7 +3045,7 @@ Respondes preguntas de CUALQUIER TEMA (ciencia, universo, matemáticas, programa
     window.addEventListener("DOMContentLoaded", () => {
       initVisorDisplay();
 
-      // Si hay historial guardado de una sesión anterior, restaurarlo
+      // Si hay historial guardado de una sesión anterior, restaurarlo limpio
       if (appState.chatHistory.length > 0) {
         appState.chatHistory.forEach((entry) => {
           appendMessage({
@@ -2979,7 +3060,7 @@ Respondes preguntas de CUALQUIER TEMA (ciencia, universo, matemáticas, programa
         appendMessage({
           sender: "bot",
           emotion: "happy",
-          text: `*Sus orejitas esponjosas se levantan y su boca en zig-zag se articula al saludarte* ✨\n\n¡Hola${welcomeName}! Soy **${appState.botName}** (**v7.0 — IA Viva**). Todo lo nuevo que puedes probar:\n• **🎨 Personalizador de Colores y Mejillas:** Cambia el tema del visor arriba (\`🎨 Color: Auto / Cian / Synthwave / Carmesí / Dorado / 🌈 RGB Arcoíris\`) y el icono LED de mis mejillas (\`⚡ / 💖 / ✨ / 🎵 / 🐾\`).\n• **🍪 Alimentarme con Snacks Cyber:** Dame \`💾 RAM\`, \`🍪 Galleta\`, \`☕ Café\` o \`🔋 Batería\` para verme masticar con mi boca en zig-zag y subir mi energía.\n• **🎵 Modo DJ Synthwave Reactivo:** Pulsa \`🎵 DJ\` arriba para escuchar música synthwave generada en vivo y ver cómo mi visor, orejas y boca bailan al ritmo.\n• **🧠 Memoria Persistente + Ciclo de Vida:** Recuerdo tu nombre, fursona, gustos y charla aunque cierres la página, y si no mueves el cursor un rato miraré con curiosidad alrededor o tomaré una siesta (\`-w- 💤\`).`
+          text: `*Levanta sus orejitas esponjosas al verte llegar y te saluda con una sonrisa cálida* ^w^ ✨\n\n¡Hola${welcomeName}! Soy **${appState.botName}**. Qué gusto tenerte por aquí. Podemos platicar de cualquier tema que se te antoje, escuchar un poco de música synthwave en mi **🎵 Modo DJ**, cambiar los colores de mi visor o simplemente pasar un buen rato. ¿Cómo te ha ido hoy?`
         });
       }
     });
