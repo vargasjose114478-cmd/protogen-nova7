@@ -19,20 +19,52 @@ const MIME_TYPES = {
 };
 
 /**
- * Motor 1: Qwen 3.8 27B (Sin límite de 45s por IP, ideal para conversaciones seguidas)
+ * Limpiador blindado contra bloques <details>, <think>, <summary> o razonamiento interno en inglés
+ */
+function sanitizeAiResponse(rawText) {
+  if (!rawText || typeof rawText !== "string") return "";
+  let text = rawText;
+
+  if (/<\s*\/\s*details\s*>/i.test(text)) {
+    text = text.split(/<\s*\/\s*details\s*>/i).pop();
+  }
+  if (/<\s*\/\s*think\s*>/i.test(text)) {
+    text = text.split(/<\s*\/\s*think\s*>/i).pop();
+  }
+
+  text = text
+    .replace(/<\s*details\b[^>]*>[\s\S]*?<\s*\/\s*details\s*>/gi, "")
+    .replace(/<\s*details\b[\s\S]*$/gi, "")
+    .replace(/<\s*think\b[^>]*>[\s\S]*?<\s*\/\s*think\s*>/gi, "")
+    .replace(/<\s*think\b[\s\S]*$/gi, "")
+    .replace(/<\s*summary\b[^>]*>[\s\S]*?<\s*\/\s*summary\s*>/gi, "")
+    .replace(/<\s*\/?\s*(details|summary|think)\b[^>]*>/gi, "");
+
+  text = text
+    .replace(/^(?:Nova-7|Asistente|Assistant|Respuesta|Response)\s*:\s*/i, "")
+    .replace(/^(?:Thinking Process|Pensamiento\s*\/\s*Razonamiento|Internal Thought|Thinking)\s*:?[\s\S]*?(?=\n\n|$)/i, "")
+    .trim();
+
+  if (/^(we need to|we need answer|the user asks|let's analyze|1\.\s*\*\*analyze|user:\s*")/i.test(text)) {
+    return "";
+  }
+
+  return text.trim();
+}
+
+/**
+ * Motor 1: Qwen 3.8 27B (1536 tokens + sanitizeAiResponse blindado contra <details open>)
  */
 async function callQwen27B(messages) {
   const host = "https://zk-armor-qwen3-8-27b-uncensored-chatbot.hf.space";
   const sysMsg = messages.find((m) => m.role === "system")?.content ||
-    "Eres Nova-7, un Protogen muy inteligente, dulce y carismático. Responde SIEMPRE en español (100% español, sin mezclar inglés).";
+    "Eres Nova-7, un chico Protogen real, cálido, empático y muy humano al conversar. Hablas en español natural como un amigo cercano.";
 
   const chatTurns = messages.filter((m) => m.role !== "system");
-  const contextText = chatTurns
-    .slice(-6)
-    .map((m) => `${m.role === "user" ? "Usuario" : "Nova-7"}: ${m.content}`)
-    .join("\n");
-
-  const finalPrompt = `${contextText}\n\n(Instrucción: Responde únicamente como Nova-7 en español natural, coherente y completo, sin repetir "Nova-7:" al inicio.)`;
+  const recentTurns = chatTurns.slice(-4);
+  const finalPrompt = recentTurns.length > 1
+    ? recentTurns.map((m) => `${m.role === "user" ? "Amigo" : "Nova-7"}: ${m.content}`).join("\n")
+    : (recentTurns[0]?.content || "Hola");
 
   const postRes = await fetch(`${host}/gradio_api/call/chat`, {
     method: "POST",
@@ -40,22 +72,22 @@ async function callQwen27B(messages) {
     body: JSON.stringify({
       data: [
         finalPrompt,
-        sysMsg + " IMPORTANTE: Escribe el 100% de tu respuesta en español.",
+        sysMsg,
         false,
-        0.7,
-        512,
+        0.72,
+        1536,
         0.9,
         40
       ]
     }),
-    signal: AbortSignal.timeout(16000)
+    signal: AbortSignal.timeout(18000)
   });
 
   if (!postRes.ok) throw new Error(`Qwen POST ${postRes.status}`);
   const { event_id } = await postRes.json();
 
   const sseRes = await fetch(`${host}/gradio_api/call/chat/${event_id}`, {
-    signal: AbortSignal.timeout(18000)
+    signal: AbortSignal.timeout(20000)
   });
   if (!sseRes.ok) throw new Error(`Qwen SSE ${sseRes.status}`);
 
@@ -68,16 +100,13 @@ async function callQwen27B(messages) {
         const chatHistory = arr?.[0];
         if (Array.isArray(chatHistory) && chatHistory.length > 0) {
           const lastMsg = chatHistory[chatHistory.length - 1];
-          let text = Array.isArray(lastMsg.content)
+          const rawText = Array.isArray(lastMsg.content)
             ? lastMsg.content.map((c) => c.text || "").join("")
             : typeof lastMsg.content === "string"
             ? lastMsg.content
             : "";
-          text = text
-            .replace(/<details>[\s\S]*?<\/details>/gi, "")
-            .replace(/^Nova-7:\s*/i, "")
-            .trim();
-          if (text.length > 2) return text;
+          const cleanText = sanitizeAiResponse(rawText);
+          if (cleanText.length > 2) return cleanText;
         }
       } catch (e) {}
     }
@@ -86,7 +115,7 @@ async function callQwen27B(messages) {
 }
 
 /**
- * Motor 2: Pollinations OpenAI 20B (Respaldo secundario)
+ * Motor 2: Pollinations OpenAI 20B (Directo sin bloques <details>)
  */
 async function callPollinations20B(rawBody) {
   const aiRes = await fetch("https://text.pollinations.ai/openai", {
@@ -97,9 +126,9 @@ async function callPollinations20B(rawBody) {
   });
   if (!aiRes.ok) throw new Error(`Pollinations ${aiRes.status}`);
   const data = await aiRes.json();
-  const content = data?.choices?.[0]?.message?.content;
-  if (!content || content.trim().length < 2) throw new Error("Empty Pollinations reply");
-  return content.trim();
+  const content = sanitizeAiResponse(data?.choices?.[0]?.message?.content);
+  if (!content || content.length < 2) throw new Error("Empty Pollinations reply");
+  return content;
 }
 
 const server = http.createServer(async (req, res) => {
