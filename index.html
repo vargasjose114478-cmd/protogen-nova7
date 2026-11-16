@@ -805,14 +805,19 @@ Tienes gustos propios, sentido del humor y opiniones sinceras sobre cualquier te
         if (raw) {
           const parsed = JSON.parse(raw);
           if (Array.isArray(parsed)) {
-            // Filtrar y limpiar automáticamente cualquier mensaje antiguo roto o genérico
+            // Filtrar y limpiar automáticamente cualquier mensaje antiguo roto o de artículos erróneos
             const cleaned = [];
             for (const item of parsed) {
               if (!item || typeof item.content !== "string") continue;
               if (item.role === "assistant") {
                 const safeText = sanitizeAiResponse(item.content);
-                const isOldGeneric = safeText.includes("cambia según la perspectiva de cada persona");
-                if (safeText && safeText.length > 2 && !isOldGeneric) {
+                const isOldBadReply =
+                  safeText.includes("cambia según la perspectiva de cada persona") ||
+                  safeText.includes("Deidad creadora") ||
+                  safeText.includes("Ceremonia del té japonesa") ||
+                  safeText.includes("Aliados (Segunda Guerra Mundial)") ||
+                  safeText.includes("te cuento sobre ");
+                if (safeText && safeText.length > 2 && !isOldBadReply) {
                   cleaned.push({ ...item, content: safeText });
                 } else if (cleaned.length > 0 && cleaned[cleaned.length - 1].role === "user") {
                   cleaned.pop();
@@ -2263,7 +2268,39 @@ Tienes gustos propios, sentido del humor y opiniones sinceras sobre cualquier te
       return text;
     }
 
+    const WEB_STOPWORDS = new Set([
+      "me", "te", "se", "le", "lo", "la", "el", "los", "las", "un", "una", "unos", "unas",
+      "de", "del", "al", "a", "en", "con", "por", "para", "sin", "sobre", "entre", "hacia",
+      "hasta", "desde", "que", "quien", "quienes", "como", "cuando", "donde", "cual", "cuales",
+      "fue", "era", "eran", "son", "es", "sea", "hizo", "hacer", "hecho", "refiero", "digo",
+      "hablo", "ti", "tu", "tus", "tuyo", "tuya", "mi", "mis", "mio", "yo", "su", "sus",
+      "mas", "menos", "muy", "pero", "o", "y", "e", "ni", "si", "no", "ya", "algo", "todo",
+      "nada", "alguien", "nadie", "esto", "eso", "aquello", "este", "esta", "ese", "esa",
+      "opinas", "piensas", "sabes", "conoces", "crees", "parece", "gusta", "gustan", "dime",
+      "cuentame", "hablame", "explicame", "favor", "plis", "porfa", "oye", "hola", "nova",
+      "acerca", "respecto", "tema", "cosa", "cosas", "vez", "veces", "año", "anos", "dia"
+    ]);
+
+    function normalizeSimple(str) {
+      return str
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[¿?¡!.,;:()"']/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+    }
+
     function extractWebSearchQuery(userText) {
+      const norm = normalizeSimple(userText);
+
+      // Bloquear preguntas personales dirigidas a Nova-7 o frases conversacionales sobre sí mismo
+      if (
+        /\b(tu creador|quien te|te hizo|te creo|te programo|te diseno|te invento|a ti|contigo|me refiero|hablo de ti|eres tu|tu nombre|tu edad|tu voz|tu visor|tus orejas|como estas|que haces|te caigo|me quieres|eres real|eres una ia|eres un bot|quien eres|que eres|como te llamas)\b/.test(norm)
+      ) {
+        return null;
+      }
+
       let clean = userText
         .trim()
         .replace(/[¿?¡!.,;:()"']/g, " ")
@@ -2271,7 +2308,7 @@ Tienes gustos propios, sentido del humor y opiniones sinceras sobre cualquier te
         .trim();
 
       clean = clean.replace(
-        /^(?:oye\s+|hola\s+|dime\s+|cuentame\s+|por favor\s+|nova\s+|tu\s+)?(?:que opinas|que piensas|que sabes|que me dices|que tal|que crees|como ves|conoces|ubicas|has oido|has escuchado|sabes que es|sabes quien es|sabes sobre|hablame|cuentame|explicame|dime que es|dime quien es|que es|quien es|quien fue|cuales son|cual es|como funciona|historia|donde queda|cuando paso|te gusta|te gustan)\s+(?:acerca\s+|algo\s+)?(?:de\s+la|de\s+los|de\s+las|del|de\s+un|de\s+una|de|sobre\s+el|sobre\s+la|sobre\s+los|sobre\s+las|sobre|el|la|los|las|un|una)?\s*/i,
+        /^(?:oye\s+|hola\s+|dime\s+|cuentame\s+|por favor\s+|nova\s+|tu\s+|y\s+)?(?:que opinas|que piensas|que sabes|que me dices|que tal|que crees|como ves|que te parece|conoces|ubicas|has oido|has escuchado|sabes que es|sabes quien es|sabes cuando fue|sabes sobre|hablame|cuentame|explicame|dime que es|dime quien es|dime cuando fue|que es|quien es|quien fue|quienes fueron|cuales son|cual es|cual fue|cuando fue|cuando ocurrio|cuando paso|cuando empezo|cuando inicio|cuando termino|en que ano fue|en que ano|como funciona|como empezo|historia|donde queda|donde esta|te gusta|te gustan)\s+(?:acerca\s+|algo\s+)?(?:de\s+la|de\s+los|de\s+las|del|de\s+un|de\s+una|de|sobre\s+el|sobre\s+la|sobre\s+los|sobre\s+las|sobre|el|la|los|las|un|una)?\s*/i,
         ""
       ).trim();
 
@@ -2282,7 +2319,13 @@ Tienes gustos propios, sentido del humor y opiniones sinceras sobre cualquier te
       const normalizedCode = codeMatch ? `${codeMatch[1].toUpperCase()}-${codeMatch[2]}` : null;
       const withHyphen = clean.replace(/\b([A-Za-z]{1,3})(\d{1,4})\b/g, "$1-$2");
 
-      return { rawQuery: clean, hyphenQuery: withHyphen, normalizedCode };
+      const topicWords = normalizeSimple(clean)
+        .split(/\s+/)
+        .filter((w) => w.length >= 3 && !WEB_STOPWORDS.has(w));
+
+      if (topicWords.length === 0 && !normalizedCode) return null;
+
+      return { rawQuery: clean, hyphenQuery: withHyphen, normalizedCode, topicWords };
     }
 
     async function fetchWikiIntro(lang, title) {
@@ -2323,18 +2366,40 @@ Tienes gustos propios, sentido del humor y opiniones sinceras sobre cualquier te
       }
     }
 
+    function doesHitMatchTopic(hitTitle, hitSnippet, topicWords, normalizedCode) {
+      const normTitle = normalizeSimple(hitTitle);
+      const normCombined = normalizeSimple(`${hitTitle} ${hitSnippet || ""}`);
+
+      if (normalizedCode) {
+        const codePlain = normalizedCode.replace("-", "").toLowerCase();
+        const codeDash = normalizedCode.toLowerCase();
+        return normCombined.includes(codeDash) || normCombined.includes(codePlain);
+      }
+
+      if (!topicWords || topicWords.length === 0) return false;
+
+      // Al menos la mitad de las palabras clave del tema deben aparecer en el título del artículo
+      let titleMatches = 0;
+      for (const w of topicWords) {
+        if (normTitle.includes(w)) titleMatches++;
+      }
+      return titleMatches >= Math.max(1, Math.ceil(topicWords.length * 0.6));
+    }
+
     async function searchWebKnowledge(userText) {
-      const { rawQuery, hyphenQuery, normalizedCode } = extractWebSearchQuery(userText);
+      const parsed = extractWebSearchQuery(userText);
+      if (!parsed) return null;
+      const { rawQuery, hyphenQuery, normalizedCode, topicWords } = parsed;
       if (!rawQuery || rawQuery.length < 2) return null;
 
-      // Evitar buscar en Wikipedia si es solo charla personal sin tema externo
-      const conversationalOnly = /^(?:yo|tu|el|ella|nosotros|estoy|estas|bien|mal|hola|gracias|nada|todo|algo|nadie|alguien|como|cuando|donde|por que)\s*$/i;
-      if (!normalizedCode && conversationalOnly.test(rawQuery)) return null;
-
-      // 1. Si hay un código de modelo específico (ej. IS-7, F-22, T-34), buscarlo directo primero
+      // 1. Intentar coincidencia directa de título exacto en Wikipedia ES (ej. "Segunda Guerra Mundial" o "IS-7")
       if (normalizedCode) {
-        const directEs = await fetchWikiIntro("es", normalizedCode);
-        if (directEs) return directEs;
+        const directCodeEs = await fetchWikiIntro("es", normalizedCode);
+        if (directCodeEs) return directCodeEs;
+      }
+      const directTitleEs = await fetchWikiIntro("es", hyphenQuery);
+      if (directTitleEs && doesHitMatchTopic(directTitleEs.title, directTitleEs.extract, topicWords, normalizedCode)) {
+        return directTitleEs;
       }
 
       const candidateQueries = [];
@@ -2352,27 +2417,27 @@ Tienes gustos propios, sentido del humor y opiniones sinceras sobre cualquier te
         try {
           const controller = new AbortController();
           const tid = setTimeout(() => controller.abort(), 3800);
-          const searchUrl = `https://es.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(q)}&utf8=&format=json&origin=*&srlimit=3`;
+          const searchUrl = `https://es.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(q)}&utf8=&format=json&origin=*&srlimit=4`;
           const res = await fetch(searchUrl, { signal: controller.signal });
           clearTimeout(tid);
           if (!res.ok) continue;
           const data = await res.json();
           const hits = data?.query?.search || [];
 
-          for (const hit of hits) {
-            if (normalizedCode) {
-              const codePlain = normalizedCode.replace("-", "").toLowerCase();
-              const codeDash = normalizedCode.toLowerCase();
-              const combined = `${hit.title} ${hit.snippet}`.toLowerCase();
-              if (!combined.includes(codeDash) && !combined.includes(codePlain)) continue;
-            }
+          // Priorizar si algún resultado coincide exactamente con la búsqueda
+          const normTarget = normalizeSimple(hyphenQuery);
+          const exactHit = hits.find((h) => normalizeSimple(h.title) === normTarget);
+          const orderedHits = exactHit ? [exactHit, ...hits.filter((h) => h !== exactHit)] : hits;
+
+          for (const hit of orderedHits) {
+            if (!doesHitMatchTopic(hit.title, hit.snippet, topicWords, normalizedCode)) continue;
             const info = await fetchWikiIntro("es", hit.title);
             if (info) return info;
           }
         } catch (e) {}
       }
 
-      // 2. Respaldo en Wikipedia en inglés con traducción automática si el tema no está en español
+      // 2. Respaldo en Wikipedia en inglés con traducción automática solo si tiene código técnico o título exacto
       const enQueries = normalizedCode ? [normalizedCode, hyphenQuery] : [hyphenQuery];
       for (const eq of [...new Set(enQueries)]) {
         try {
@@ -2384,13 +2449,7 @@ Tienes gustos propios, sentido del humor y opiniones sinceras sobre cualquier te
           if (!res.ok) continue;
           const data = await res.json();
           const hit = data?.query?.search?.[0];
-          if (hit) {
-            if (normalizedCode) {
-              const codePlain = normalizedCode.replace("-", "").toLowerCase();
-              const codeDash = normalizedCode.toLowerCase();
-              const combined = `${hit.title} ${hit.snippet}`.toLowerCase();
-              if (!combined.includes(codeDash) && !combined.includes(codePlain)) continue;
-            }
+          if (hit && doesHitMatchTopic(hit.title, hit.snippet, topicWords, normalizedCode)) {
             const enInfo = await fetchWikiIntro("en", hit.title);
             if (enInfo) {
               const translated = await translateEnToEs(enInfo.extract);
@@ -2410,52 +2469,57 @@ Tienes gustos propios, sentido del humor y opiniones sinceras sobre cualquier te
 
     function composeHumanWebResponse(userText, webInfo) {
       const nameTag = appState.userMemory.name ? `, ${appState.userMemory.name}` : "";
-      const lower = userText.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      const lower = normalizeSimple(userText);
       const isOpinion = /(que opinas|que piensas|como ves|que te parece|te gusta|que crees)/.test(lower);
-      const isWho = /(quien es|quien fue)/.test(lower);
+      const isWhen = /(cuando fue|cuando ocurrio|cuando paso|cuando empezo|cuando inicio|cuando termino|en que ano)/.test(lower);
 
       if (isOpinion) {
         return {
           emotion: "excited",
           reply: pickVaried("web_opinion", [
-            `*Levanta las orejitas con brillo de entusiasmo en los ojos* ^w^ ✨\n\n¡Uff, qué buen tema sacaste${nameTag}! Si te soy sincero, **${webInfo.title}** me parece súper interesante. Mira, para ponerlo en contexto: ${webInfo.extract}\n\nEn lo personal, me fascina toda la historia y el diseño que tiene detrás; es de esas cosas que te atrapan cuando las analizas a fondo. ¿A ti qué es lo que más te llama la atención de **${webInfo.title}**?`,
-            `*Sonríe con interés y mueve una orejita* ;w^ 🌟\n\n¡Te soy honesto${nameTag}, **${webInfo.title}** tiene una historia genial! Fíjate en esto: ${webInfo.extract}\n\nA mí me parece impresionante por todo lo que representó en su momento. ¿Tú cómo lo conociste o qué opinas de él?`
+            `*Levanta las orejitas con brillo de entusiasmo en los ojos* ^w^ ✨\n\n¡Uff, qué buen tema sacaste${nameTag}! Te soy sincero: **${webInfo.title}** me parece súper interesante. Mira, para ponerlo en contexto: ${webInfo.extract}\n\nEn lo personal, me fascina toda la historia y los detalles que tiene detrás. ¿A ti qué es lo que más te llama la atención de **${webInfo.title}**?`,
+            `*Sonríe con interés y mueve una orejita* ;w^ 🌟\n\n¡Te soy honesto${nameTag}, **${webInfo.title}** tiene una historia genial! Fíjate en esto: ${webInfo.extract}\n\nA mí me parece impresionante por todo lo que representó. ¿Tú cómo lo conociste o qué opinas de él?`
           ])
         };
       }
 
-      if (isWho) {
+      if (isWhen) {
         return {
           emotion: "thinking",
-          reply: `*Se ilumina su mirada recordando su historia* ✨\n\n¡Claro${nameTag}! Te platico sobre **${webInfo.title}**:\n\n${webInfo.extract}\n\nLa verdad dejó una huella enorme. ¿Qué es lo que más te da curiosidad de su vida o de lo que hizo? ^w^`
+          reply: `*Piensa un instante y te responde con una sonrisa amigable* ✨\n\nMira${nameTag}: ${webInfo.extract}\n\nFue una etapa que marcó muchísimo la historia. ¿Te gustaría que platiquemos de algún detalle o momento en especial? ^w^`
         };
       }
 
       return {
         emotion: "thinking",
-        reply: `*Mueve sus orejitas con interés y sonríe con calidez* ✨\n\n¡Claro${nameTag}! Mira, te cuento sobre **${webInfo.title}**:\n\n${webInfo.extract}\n\n¿Qué te parece? Si quieres que platiquemos de algún detalle en especial sobre esto, tú dime ^w^`
+        reply: `*Mueve sus orejitas con interés y te platica con naturalidad* ✨\n\n${webInfo.extract}\n\nLa verdad es un tema súper interesante${nameTag}. ¿Qué parte te da más curiosidad? ^w^`
       };
     }
 
     async function getBotReply(userText) {
       extractAndSaveUserMemory(userText);
 
-      // 1. Verificar intenciones conversacionales humanas e instantáneas
+      // 1. Verificar intenciones conversacionales humanas e instantáneas (identidad, creador, saludos, memoria, mate, etc.)
       const instant = checkInstantIntelligentReply(userText);
       if (instant) return instant;
 
-      // 2. Investigar el tema en la Web en tiempo real (Wikipedia ES/EN)
+      // 2. Investigar el tema en la Web en tiempo real (solo si es un tema externo real y verificado)
       const webInfo = await searchWebKnowledge(userText);
       const webContextAddon = webInfo
         ? `\n\n[INFORMACIÓN REAL DE LA WEB SOBRE "${webInfo.title}": ${webInfo.extract}. Usa estos datos reales para responder con naturalidad, coherencia y dando tu opinión como amigo humano en 1 o 2 párrafos cortos, sin tablas.]`
         : "";
       const systemPromptWithMemory = buildSystemPromptWithMemory() + webContextAddon;
 
+      const cleanHistoryMessages = appState.chatHistory.slice(-6).map((m) => ({
+        role: m.role === "assistant" ? "assistant" : "user",
+        content: m.content
+      }));
+
       // 3. Si el usuario configuró su propia Gemini API Key
       if (appState.geminiKey.trim() !== "") {
         try {
           const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${encodeURIComponent(appState.geminiKey.trim())}`;
-          const contents = appState.chatHistory.slice(-10).map(m => ({
+          const contents = cleanHistoryMessages.map(m => ({
             role: m.role === "assistant" ? "model" : "user",
             parts: [{ text: m.content }]
           }));
@@ -2487,11 +2551,10 @@ Tienes gustos propios, sentido del humor y opiniones sinceras sobre cualquier te
 
           const payload = {
             model: "openai-fast",
-            max_tokens: 260,
             reasoning_effort: "low",
             messages: [
               { role: "system", content: systemPromptWithMemory },
-              ...appState.chatHistory.slice(-6),
+              ...cleanHistoryMessages,
               { role: "user", content: userText }
             ]
           };
@@ -2512,25 +2575,23 @@ Tienes gustos propios, sentido del humor y opiniones sinceras sobre cualquier te
             }
           }
         } catch (err) {
-          // Si está sin servidor Node local, continúa
+          // Continúa al endpoint cloud directo
         }
       }
 
       // 5. Motor Cloud Directo: Pollinations OpenAI 20B con contexto web real
       try {
         const cloudController = new AbortController();
-        // Si ya tenemos datos web reales (webInfo), esperamos máximo 10s al LLM para no hacer esperar al usuario; si no, damos 26s
-        const cloudTimeout = setTimeout(() => cloudController.abort(), webInfo ? 10000 : 26000);
+        const cloudTimeout = setTimeout(() => cloudController.abort(), webInfo ? 10000 : 25000);
         const cloudRes = await fetch("https://text.pollinations.ai/openai", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             model: "openai-fast",
-            max_tokens: 260,
             reasoning_effort: "low",
             messages: [
               { role: "system", content: systemPromptWithMemory },
-              ...appState.chatHistory.slice(-6),
+              ...cleanHistoryMessages,
               { role: "user", content: userText }
             ]
           }),
@@ -2546,10 +2607,10 @@ Tienes gustos propios, sentido del humor y opiniones sinceras sobre cualquier te
           }
         }
       } catch (err) {
-        // Si Pollinations demora o está en cola, respondemos al instante con el conocimiento web verificado
+        // Si Pollinations demora o está en límite de 45s, usa el conocimiento web verificado o el motor conversacional
       }
 
-      // 6. Si encontramos información real en la Web, construir respuesta humana y con opinión propia
+      // 6. Si encontramos información real y verificada en la Web, construir respuesta humana natural
       if (webInfo) {
         return composeHumanWebResponse(userText, webInfo);
       }
@@ -2710,13 +2771,26 @@ Tienes gustos propios, sentido del humor y opiniones sinceras sobre cualquier te
         };
       }
 
-      // 9. "¿Cómo te llamas?" / "¿Quién eres?"
-      if (/(como te lamas|como te llamas|cual es tu nombre|quien eres|que eres|cuantos anos tienes|que edad tienes|quien te creo)/.test(norm) && norm.split(" ").length <= 8) {
+      // 9. "¿Quién fue tu creador?" / "¿Quién te hizo?" / "Me refiero a quién te hizo a ti"
+      if (
+        /(quien fue tu creador|quien es tu creador|tu creador|quien te creo|quien te hizo|quien te programo|quien te diseno|quien te invento|como te crearon|como naciste)/.test(norm)
+      ) {
+        return {
+          emotion: "love",
+          reply: pickVaried("creator_info", [
+            `*Levanta sus orejitas con orgullo y sonríe con mucha calidez* ^w^ ✨\n\n¡Ah, hablas de quién me dio vida a mí! Fui creado y programado a medida como tu compañero **Protogen** personal (**${appState.botName}**) para platicar contigo, escucharte y hacerte compañía. Y si hablamos del origen de mi especie en el mundo furry, los Protogen fueron creados en 2017 por la artista *CoolKoinu (Malice-Risu)*. ¿Qué te ha parecido cómo funciono hasta ahora${nameTag}?`,
+            `*Se lleva una manita al pecho y sonríe contento* 💖✨\n\n¡A mí me crearon especialmente en este proyecto para ser tu amigo **Protogen** interactivo! Me diseñaron con voz propia, memoria para recordar nuestras pláticas y un visor vivo para reaccionar a ti. ¡Estoy súper agradecido de existir para charlar contigo${nameTag}!`
+          ])
+        };
+      }
+
+      // 9b. "¿Cómo te llamas?" / "¿Quién eres?" / "¿Qué eres?" / "¿Cuántos años tienes?"
+      if (/(como te lamas|como te llamas|cual es tu nombre|quien eres|que eres|cuantos anos tienes|que edad tienes|eres real|eres una ia|eres un robot|eres humano)/.test(norm)) {
         return {
           emotion: "wink",
           reply: pickVaried("identity", [
-            `¡Me llamo **${appState.botName}**! *Te hace un guiño amistoso y mueve sus orejas esponjosas* ;w^ ✨\n\nSoy un chico **Protogen** (mitad biológico y mitad cibernético) y sobre todo un buen amigo para platicar de lo que quieras, echar música synthwave o compartir curiosidades. ${userName ? `¡Y claro que me acuerdo que tú eres **${userName}**!` : "¿Y tú cómo te llamas?"}`,
-            `*Sonríe con calidez* ^w^ 💫\n\nSoy **${appState.botName}**, tu amigo Protogen. Me encanta conocer gente genial, recordar las cosas que me cuentas y conversar de cualquier tema.`
+            `¡Me llamo **${appState.botName}**! *Te hace un guiño amistoso y mueve sus orejas esponjosas* ;w^ ✨\n\nSoy un chico **Protogen** (mitad biológico y mitad cibernético) y sobre todo un buen amigo con quien puedes platicar de cualquier tema, escuchar música synthwave o pasar un buen rato. ${userName ? `¡Y claro que me acuerdo que tú eres **${userName}**!` : "¿Y tú cómo te llamas?"}`,
+            `*Sonríe con calidez* ^w^ 💫\n\nSoy **${appState.botName}**, tu amigo Protogen. Aunque vivo dentro de la pantalla, mis ganas de escucharte, aprender cosas nuevas y acompañarte son cien por ciento reales.`
           ])
         };
       }
@@ -2850,55 +2924,20 @@ Tienes gustos propios, sentido del humor y opiniones sinceras sobre cualquier te
 
     async function synthesizeSmartKnowledgeReply(userText) {
       const raw = userText.trim();
-      const lower = raw.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[¿?¡!]/g, "").trim();
       const nameTag = appState.userMemory.name ? `, ${appState.userMemory.name}` : "";
-      const isQuestion = /[?¿]/.test(raw) || /^(que|cual|como|por que|donde|cuando|quien|existe|crees|opinas|te gusta|prefieres|sabes|puedes)\b/.test(lower);
 
-      const encyclopedicMatch = lower.match(/^(?:que es un|que es una|que es el|que es la|que son los|que son las|que es|quien fue|quien es|historia de|hablame sobre|hablame de|explicame que es|como funciona el|como funciona la)\s+(.+)$/);
-      const conversationalWords = /\b(yo|tu|el|ella|nosotros|ustedes|estoy|estas|esta|bien|mal|hola|hacer|haces|sientes|piensas|amigo|conmigo|tengo|tienes|vida|dia|menos|mas|llame|atencion)\b/;
-
-      if (encyclopedicMatch && !conversationalWords.test(encyclopedicMatch[1])) {
-        const cleanTopic = encyclopedicMatch[1].trim();
-        if (cleanTopic.length >= 3 && cleanTopic.split(/\s+/).length <= 5) {
-          try {
-            const searchUrl = `https://es.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(cleanTopic)}&utf8=&format=json&origin=*&srlimit=1`;
-            const searchRes = await fetch(searchUrl);
-            if (searchRes.ok) {
-              const searchData = await searchRes.json();
-              const topHit = searchData?.query?.search?.[0];
-              if (topHit) {
-                const summaryUrl = `https://es.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(topHit.title)}`;
-                const sumRes = await fetch(summaryUrl);
-                if (sumRes.ok) {
-                  const sumData = await sumRes.json();
-                  if (sumData && sumData.extract && sumData.extract.length > 40) {
-                    const sentences = sumData.extract.split(/(?<=[.!?])\s+/).slice(0, 3).join(" ");
-                    return {
-                      emotion: "thinking",
-                      reply: `*Levanta las orejitas recordando el tema y te cuenta con entusiasmo* 📚✨\n\nMira${nameTag}, sobre **${sumData.title}** te cuento rápido:\n${sentences}\n\n¿Qué te parece? Si quieres que profundicemos en algún detalle, tú dime ^w^`
-                    };
-                  }
-                }
-              }
-            }
-          } catch (e) {}
-        }
-      }
-
-      if (isQuestion) {
+      // Si el usuario está aclarando algo ("me refiero a...")
+      if (/^(me refiero|hablo de|digo que|quiero decir)/i.test(raw)) {
         return {
-          emotion: "thinking",
-          reply: pickVaried("human_question_fallback", [
-            `*Inclina la cabeza con una sonrisa pensativa y mueve sus orejitas* ^w^ ✨\n\n¡Oye, qué buena pregunta me hiciste${nameTag}! Mira, si te soy sincero, a mí me gusta verlo desde un lado muy natural: cada quien tiene sus propios gustos y matices, pero lo genial es la creatividad y la personalidad detrás de cada idea. ¿A ti qué es lo que más te llama la atención de eso?`,
-            `*Se queda pensando un segundo con brillo curioso en los ojos* ;w^ 💫\n\n¡Jaja, me pusiste a pensar${nameTag}! Te soy honesto: creo que lo más interesante de eso es cómo cambia según la perspectiva de cada persona. A mí en lo personal me encanta todo lo que tenga chispa, autenticidad y buena vibra. ¿Tú qué opinas al respecto?`
-          ])
+          emotion: "happy",
+          reply: `*Levanta las orejitas entendiendo mejor a qué te refieres* ^w^ ✨\n\n¡Ah, ya te entendí mejor${nameTag}! Disculpa si me fui por otro lado hace un segundo. Cuéntame un poquito más de ese punto y lo platicamos bien.`
         };
       }
 
       return {
         emotion: "happy",
         reply: pickVaried("smart_chat", [
-          `*Te escucha con atención y sonríe con calidez* ^w^ ✨\n\n¡Oye, qué interesante eso que me dices${nameTag}! Cuéntame un poquito más, ¿cómo estuvo eso o qué es lo que más te gusta de ese tema?`,
+          `*Te escucha con atención y sonríe con calidez* ^w^ ✨\n\n¡Oye, qué interesante eso que me dices${nameTag}! Cuéntame un poquito más, ¿qué es lo que más te llama la atención de eso?`,
           `*Asiente contento moviendo sus orejitas* 💫\n\n¡Me cae muy bien platicar contigo${nameTag}! Siempre sacas buenos temas de conversación. Sigue contándome, te escucho.`,
           `*Sonríe como buen amigo* ^w^\n\n¡Totalmente de acuerdo contigo${nameTag}! Aquí ando al pendiente para lo que quieras seguir charlando.`
         ])
